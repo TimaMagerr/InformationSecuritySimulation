@@ -1,6 +1,10 @@
 import openpyxl
 import random
 
+from ProjectClasses.EmployeeC import Employee
+from ProjectFunctions.EmployeeF import departments
+
+
 # Функция для сохранения сотрудников в Excel файл
 def save_employees_to_excel(filename="employees.xlsx"):
     """Сохраняет информацию о сотрудниках из словаря departments в Excel файл."""

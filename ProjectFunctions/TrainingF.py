@@ -38,4 +38,3 @@ def apply_training(employee, training_type, intensity):
         employee.authority_respect = max(0.0, employee.authority_respect - 0.2 * intensity * employee.learnability) #Уменьшаем уважение к авторитетам, но не меньше 0
         employee.risk_aversion = min(1.0, employee.risk_aversion + 0.1 * intensity * employee.learnability) #Повышаем осторожность
 
-    # Можно добавить другие типы тренингов и их эффекты на параметры сотрудника
