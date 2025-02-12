@@ -14,13 +14,13 @@ departments = {
 # Генерация случайных сотрудников
 def generate_employees(departments, num_employees):
     """Генерирует случайных сотрудников и распределяет их по существующим отделам."""
-    names = ["Alice", "Bob", "Charlie", "David", "Eve", "Mallory", "Trent", "Carol"]  # Пример списка имен
+    names = ["Alice", "Bob", "Charlie", "David", "Eve", "Mallory", "Trent", "Carol", "Mary", "Piter", "Vladi", "Alex"]  # Пример списка имен
     department_names = list(departments.keys())  # Получаем список названий отделов
 
     for i in range(num_employees):
         department_name = random.choice(department_names) # Выбираем случайный отдел
         employee = Employee(
-            name = random.choice(names) + str(i), # Добавляем номер, чтобы имена не повторялись
+            name = random.choice(names) + "_" + str(i), # Добавляем номер, чтобы имена не повторялись
             department = department_name,
             age = random.randint(22, 60),
             experience = random.randint(0, 20),

@@ -51,7 +51,7 @@ def load_employees_from_csv(filename="employees.csv"):
                                "Learnability", "Social Engineering Awareness", "Reporting Culture",
                                "Authority Respect", "Workload", "Risk Aversion"]
             if headers != expected_headers:
-                print("Структура CSV файла не соответствует ожидаемой.")
+                print("Структура CSV файла некорректна!")
                 return {}
 
             for row in reader:
@@ -98,7 +98,7 @@ def load_employees_from_csv(filename="employees.csv"):
                     print(f"Ошибка при обработке строки: {row}. Ошибка: {e}")
 
     except FileNotFoundError:
-        print(f"Файл {filename} не найден.")
+        print(f"Файл {filename} не найден!")
         return {}
     except Exception as e:
         print(f"Произошла ошибка при загрузке данных из файла {filename}: {e}")
