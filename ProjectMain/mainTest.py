@@ -3,10 +3,10 @@ import tkinter as tk
 from tkinter import ttk, Toplevel, Text, Scrollbar  # Добавлены Toplevel, Text, Scrollbar
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-
 from ProjectFunctions.CSV_SaveLoad import save_employees_to_csv, load_employees_from_csv
 from ProjectFunctions.EmployeeF import departments, generate_employees
 
+# --- 3. Глобальные переменные ---
 loaded_departments = {}  # Здесь будут храниться загруженные данные
 num_employees = 0 # Здесь будет храниться количество сотрудников
 
@@ -105,21 +105,33 @@ def show_department_employees(department_name):
     employee_window = Toplevel(root)
     employee_window.title(f"Сотрудники отдела '{department_name}'")
 
-    # Создаем текстовый виджет с полосой прокрутки
-    text_widget = Text(employee_window, wrap=tk.NONE) #Отключаем перенос строк
-    text_widget.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+    # Определяем столбцы таблицы (все характеристики сотрудника)
+    columns = ("Имя", "Возраст", "Стаж", "Внимательность", "Тех. грамотность", "Стрессоустойчивость",
+               "Следование инструкциям", "Обучаемость", "Осведомленность о социальной инженерии",
+               "Культура отчетности", "Уважение к авторитетам", "Рабочая нагрузка", "Склонность к риску")
+    tree = ttk.Treeview(employee_window, columns=columns, show="headings") # show="headings" скрывает первый столбец с ID
 
-    scrollbar = Scrollbar(employee_window, command=text_widget.yview)
-    scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+    # Задаем заголовки для столбцов
+    for col in columns:
+        tree.heading(col, text=col)
+        tree.column(col, width=100)  # Устанавливаем ширину столбцов
 
-    text_widget.config(yscrollcommand=scrollbar.set)
-
-    # Заполняем текстовый виджет информацией о сотрудниках
-    text_widget.insert(tk.END, f"Сотрудники отдела '{department_name}':\n")
+    # Заполняем таблицу данными о сотрудниках
     for employee in department.employees:
-        text_widget.insert(tk.END, str(employee) + "\n\n")
+        tree.insert("", tk.END, values=(employee.name, employee.age, employee.experience,
+                                        f"{employee.attentiveness:.2f}", f"{employee.technical_literacy:.2f}",
+                                        f"{employee.stress_resistance:.2f}", f"{employee.instruction_following:.2f}",
+                                        f"{employee.learnability:.2f}", f"{employee.social_engineering_awareness:.2f}",
+                                        f"{employee.reporting_culture:.2f}", f"{employee.authority_respect:.2f}",
+                                        f"{employee.workload:.2f}", f"{employee.risk_aversion:.2f}")) #Используем f-строки для форматирования
 
-    text_widget.config(state=tk.DISABLED)  # Запрещаем редактирование текста
+    tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+
+    # Добавляем полосу прокрутки
+    scrollbar = ttk.Scrollbar(employee_window, orient="vertical", command=tree.yview)
+    scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+    tree.configure(yscrollcommand=scrollbar.set)
+
 
 # --- 5. Создание главного окна ---
 root = tk.Tk()
@@ -151,11 +163,17 @@ departments_frame.pack(side=tk.TOP, fill=tk.X)
 department_labels = {} #Словарь для хранения labels
 
 # Создание меток для каждого отдела, привязка события клика
-for i, (dept_name, department) in enumerate(departments.items()):
-    label = ttk.Label(departments_frame, text=f"{dept_name}: 0 сотрудников") #Создаем label
-    label.grid(row=0, column=i, padx=5, sticky=tk.W) #Размещаем на форме
-    label.bind("<Button-1>", lambda event, name=dept_name: show_department_employees(name)) #Привязываем событие клика
-    department_labels[dept_name] = label #Сохраняем в словарь
+i = 0 #Инициализируем счетчик
+for dept_name, department in departments.items():
+    # Создаем метку с информацией о количестве сотрудников
+    label = ttk.Label(departments_frame, text=f"{dept_name}: 0 сотрудников")
+    label.grid(row=0, column=i, padx=5, sticky=tk.W)
+    department_labels[dept_name] = label
+
+    # Создаем кнопку "Показать сотрудников" для каждого отдела
+    show_employees_button = ttk.Button(departments_frame, text=f"Показать сотрудников {dept_name}", command=lambda name=dept_name: show_department_employees(name)) #Создаем кнопку
+    show_employees_button.grid(row=1, column=i, padx=5, sticky=tk.W) #Размещаем кнопку
+    i += 1 #Увеличиваем счетчик
 
 
 # --- 8. Рамка для графика ---
