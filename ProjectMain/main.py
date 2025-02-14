@@ -7,10 +7,12 @@ import openpyxl
 
 # Создаем 100 сотрудников
 num_employees = 100
-generate_employees(departments, num_employees)
+#generate_employees(departments, num_employees)
+#save_employees_to_csv(departments)  # Сохраняем сгенерированных сотрудников
+loaded_departments = load_employees_from_csv() # Загружаем из файла
 
 department_counts = {}
-for department_name, department in departments.items():
+for department_name, department in loaded_departments.items():
     department_counts[department_name] = len(department.employees)
 
 print("Количество сотрудников в отделах:", department_counts) #Вывод для отладки
