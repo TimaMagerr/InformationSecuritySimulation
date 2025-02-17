@@ -1,6 +1,8 @@
 from ProjectClasses.DepartmentC import Department
 from ProjectClasses.EmployeeC import Employee
 import csv
+import tkinter as tk
+from tkinter import filedialog
 
 
 def save_employees_to_csv(departments, filename="employees.csv"):
@@ -31,14 +33,29 @@ def save_employees_to_csv(departments, filename="employees.csv"):
         print(f"Произошла ошибка при сохранении в файл {filename}: {e}")
 
 
-def load_employees_from_csv(filename="employees.csv"):
-    """Загружает информацию о сотрудниках из CSV файла и создает объекты Employee.
-       Возвращает словарь departments, где ключи - названия отделов, а значения - объекты Department.
+def load_employees_from_csv(departments):
     """
-    departments = {}
+    Загружает информацию о сотрудниках из CSV файла, выбранного пользователем,
+    и создает объекты Employee.
+    Возвращает словарь departments, где ключи - названия отделов,
+    а значения - объекты Department.
+    """
+
+    # Открываем диалоговое окно для выбора файла
+    filename = filedialog.askopenfilename(
+        initialdir=".",  # Начальная директория
+        title="Выберите CSV файл с данными о сотрудниках",  # Заголовок окна
+        filetypes=(("CSV files", "*.csv"), ("all files", "*.*"))  # Фильтр файлов
+    )
+
+    # Если пользователь не выбрал файл, возвращаем пустой словарь
+    if not filename:
+        print("Загрузка отменена пользователем.")
+        return {}
+
     try:
         with open(filename, 'r', newline='', encoding='utf-8') as csvfile:
-            reader = csv.reader(csvfile, delimiter=';')
+            reader = csv.reader(csvfile, delimiter=';') # Использовать разделитель, который у вас в CSV
             headers = next(reader, None)
 
             if headers is None:

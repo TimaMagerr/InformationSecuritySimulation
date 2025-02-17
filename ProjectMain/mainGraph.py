@@ -37,7 +37,7 @@ def load_employees():
     for department in departments.values():  # Очищаем существующие отделы
         department.employees = []
 
-    loaded_departments = load_employees_from_csv() #Загружаем
+    loaded_departments = load_employees_from_csv(departments) #Загружаем, передавая departments
     if loaded_departments:
         num_employees = sum(len(dep.employees) for dep in loaded_departments.values()) #Считаем общее кол-во сотрудников
         update_department_info()  # Обновляем информацию об отделах
