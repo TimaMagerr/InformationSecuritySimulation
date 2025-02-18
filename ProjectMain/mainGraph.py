@@ -3,8 +3,10 @@ import tkinter as tk
 from tkinter import ttk, Toplevel, Text, Scrollbar  # Добавлены Toplevel, Text, Scrollbar
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-from ProjectFunctions.CSV_SaveLoad import save_employees_to_csv, load_employees_from_csv
-from ProjectFunctions.EmployeeF import departments, generate_employees
+
+from ProjectClasses.DepartmentC import departments
+from ProjectFunctions.CSV_SaveLoad import save_employees_to_csv, load_employees_from_csv, save_all_department_data
+from ProjectFunctions.EmployeeF import generate_employees
 
 # --- 3. Глобальные переменные ---
 loaded_departments = {}  # Здесь будут храниться загруженные данные
@@ -159,6 +161,8 @@ load_button.grid(row=0, column=3, padx=5, sticky=tk.W)
 # --- 7. Рамка для информации об отделах ---
 departments_frame = ttk.Frame(root, padding=10)
 departments_frame.pack(side=tk.TOP, fill=tk.X)
+save_departments_button = ttk.Button(departments_frame, text="Сохранить данные по отделам", command=lambda: save_all_department_data(loaded_departments)) #Создаем кнопку
+save_departments_button.grid(row=2, column=0, padx=5, sticky=tk.W) #Выделяем место
 
 department_labels = {} #Словарь для хранения labels
 

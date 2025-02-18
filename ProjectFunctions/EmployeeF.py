@@ -2,14 +2,6 @@ from ProjectClasses.DepartmentC import Department
 from ProjectClasses.EmployeeC import Employee
 import random
 
-# Создание организации
-departments = {
-    "Development": Department("Development"), # Отдел разработки
-    "Accounting": Department("Accounting"), # Отдел бухгалтерии
-    "HR": Department("HR"), # Отдел по подбору персонала
-    "Marketing": Department("Marketing") # Маркетинговый отдел
-}
-
 
 # Генерация случайных сотрудников
 def generate_employees(departments, num_employees):

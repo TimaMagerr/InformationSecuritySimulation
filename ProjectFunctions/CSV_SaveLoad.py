@@ -29,6 +29,8 @@ def save_employees_to_csv(departments, filename="employees.csv"):
 
         print(f"Сотрудники сохранены в файл {filename}")
 
+        save_all_department_data(departments)
+
     except Exception as e:
         print(f"Произошла ошибка при сохранении в файл {filename}: {e}")
 
@@ -123,4 +125,93 @@ def load_employees_from_csv(departments):
 
     total_employees = sum(len(dep.employees) for dep in departments.values())
     print(f"Загружено {total_employees} сотрудников из файла {filename} в {len(departments)} отдела.")
+    save_all_department_data(departments)
     return departments
+
+def save_department_data_to_csv(department, filename=None):
+    """
+    Сохраняет информацию об отделе (сотрудники и статистика) в CSV файл.
+
+    Args:
+        department (Department): Объект отдела, данные которого нужно сохранить.
+        filename (str, optional): Имя файла для сохранения. Если не указано, будет предложено выбрать файл.
+    """
+
+    if filename is None:
+        filename = filedialog.asksaveasfilename(
+            initialdir=".",
+            title=f"Сохранить данные отдела '{department.name}' в CSV",
+            filetypes=(("CSV files", "*.csv"), ("Все файлы", "*.*"))
+        )
+        if not filename:
+            print("Сохранение отменено пользователем.")
+            return
+
+    try:
+        with open(filename, 'w', newline='', encoding='utf-8') as csvfile:
+            writer = csv.writer(csvfile, delimiter=';')
+            """
+            # Заголовки столбцов (сотрудники)
+            employee_headers = ["Имя", "Возраст", "Стаж", "Внимательность",
+                               "Тех. грамотность", "Стрессоустойчивость", "Следование инструкциям",
+                               "Обучаемость", "Осведомленность о социальной инженерии", "Культура отчетности",
+                               "Уважение к авторитетам", "Рабочая нагрузка", "Склонность к риску"]
+
+            # Заголовки столбцов (статистика)
+            attack_headers = ["Вероятность успеха фишинга", "Количество успешных фишинг-атак", "Всего фишинг-атак",
+                             "Вероятность успеха вредоносного ПО", "Количество успешных атак вредоносного ПО", "Всего атак вредоносного ПО",
+                             "Вероятность успеха социальной инженерии", "Количество успешных атак социальной инженерии", "Всего атак социальной инженерии"]
+            """
+
+            # Разделяем заголовки на заголовки сотрудников и статистики
+            employee_headers = ["Name", "Age", "Experience", "Attentiveness",
+                                "Technical Literacy", "Stress Resistance", "Instruction Following",
+                                "Learnability", "Social Engineering Awareness", "Reporting Culture",
+                                "Authority Respect", "Workload", "Risk Aversion"]
+            attack_headers = ["Phishing Success Probability", "Phishing Success Count", "Phishing Total Attacks",
+                              "Malware Success Probability", "Malware Success Count", "Malware Total Attacks",
+                              "Social Engineering Success Probability", "Social Engineering Success Count",
+                              "Social Engineering Total Attacks"]
+
+            writer.writerow(["Department:", department.name])  # Записываем название отдела в первой строке
+            writer.writerow(employee_headers + attack_headers)  # Записываем заголовки во второй строке
+
+            # Записываем информацию о сотрудниках и статистику для *каждого* сотрудника
+            for employee in department.employees:
+                # Данные сотрудника
+                row = [employee.name, employee.age, employee.experience,
+                       employee.attentiveness, employee.technical_literacy, employee.stress_resistance,
+                       employee.instruction_following, employee.learnability, employee.social_engineering_awareness,
+                       employee.reporting_culture, employee.authority_respect, employee.workload,
+                       employee.risk_aversion]
+
+                # Статистика об атаках берется *из отдела*, а не из сотрудника (у сотрудника нет своей статистики)
+                attack_stats = [department.attack_stats["phishing"]["success_probability"],
+                                department.attack_stats["phishing"]["success_count"],
+                                department.attack_stats["phishing"]["total_attacks"],
+                                department.attack_stats["malware"]["success_probability"],
+                                department.attack_stats["malware"]["success_count"],
+                                department.attack_stats["malware"]["total_attacks"],
+                                department.attack_stats["social_engineering"]["success_probability"],
+                                department.attack_stats["social_engineering"]["success_count"],
+                                department.attack_stats["social_engineering"]["total_attacks"]]
+
+                writer.writerow(row + attack_stats)  # Записываем строку с данными сотрудника и статистикой отдела
+
+        print(f"Данные отдела '{department.name}' сохранены в файл {filename}")
+
+    except Exception as e:
+        print(f"Произошла ошибка при сохранении в файл {filename}: {e}")
+
+
+def save_all_department_data(departments):
+    """
+    Сохраняет данные каждого отдела в отдельный CSV файл.
+    """
+    for department_name, department in departments.items():
+        # Create a filename based on the department name (you can add a prefix or suffix)
+        # Создаем имя файла на основе имени отдела (можно добавить префикс или суффикс)
+        filename = f"department_{department_name}.csv"
+        # Call the save function for each department
+        # Вызываем функцию сохранения для каждого отдела
+        save_department_data_to_csv(department, filename)
