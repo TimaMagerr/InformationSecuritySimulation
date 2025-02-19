@@ -5,15 +5,16 @@ import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
 from ProjectClasses.DepartmentC import departments
-from ProjectFunctions.CSV_SaveLoad import save_employees_to_csv, load_employees_from_csv, save_all_department_data
+from ProjectFunctions.AttackSimulation import perform_department_attack_simulation
+from ProjectFunctions.CSV_SaveLoad import save_employees_to_csv, load_employees_from_csv, save_department_data_to_csv, \
+    save_all_department_data
 from ProjectFunctions.EmployeeF import generate_employees
 
-# --- 3. Глобальные переменные ---
+# --- Глобальные переменные ---
 loaded_departments = {}  # Здесь будут храниться загруженные данные
 num_employees = 0 # Здесь будет храниться количество сотрудников
 
-# --- 4. Функции для работы с данными и графиками ---
-
+# --- Функции для работы с данными и графиками ---
 def create_employees():
     """Создает сотрудников и сохраняет данные в CSV."""
     global num_employees, loaded_departments
@@ -99,47 +100,83 @@ def show_department_employees(department_name):
     """Создает новое окно с таблицей сотрудников для выбранного отдела."""
     if department_name not in loaded_departments:
         status_label.config(text=f"Нет данных для отдела '{department_name}'.")
+    else:
+        # ******************** Загрузка отделов ******************** #
+        department = loaded_departments[department_name]
+
+        # Создаем новое окно
+        employee_window = Toplevel(root)
+        employee_window.title(f"Сотрудники отдела '{department_name}'")
+
+        # Определяем столбцы таблицы (все характеристики сотрудника)
+        columns = ("Имя", "Возраст", "Стаж", "Внимательность", "Тех. грамотность", "Стрессоустойчивость",
+                   "Следование инструкциям", "Обучаемость", "Осведомленность о социальной инженерии",
+                   "Культура отчетности", "Уважение к авторитетам", "Рабочая нагрузка", "Склонность к риску")
+        tree = ttk.Treeview(employee_window, columns=columns,
+                            show="headings")  # show="headings" скрывает первый столбец с ID
+
+        # Задаем заголовки для столбцов
+        for col in columns:
+            tree.heading(col, text=col)
+            tree.column(col, width=100)  # Устанавливаем ширину столбцов
+
+        # Заполняем таблицу данными о сотрудниках
+        for employee in department.employees:
+            tree.insert("", tk.END, values=(employee.name, employee.age, employee.experience,
+                                            f"{employee.attentiveness:.2f}", f"{employee.technical_literacy:.2f}",
+                                            f"{employee.stress_resistance:.2f}",
+                                            f"{employee.instruction_following:.2f}",
+                                            f"{employee.learnability:.2f}",
+                                            f"{employee.social_engineering_awareness:.2f}",
+                                            f"{employee.reporting_culture:.2f}", f"{employee.authority_respect:.2f}",
+                                            f"{employee.workload:.2f}",
+                                            f"{employee.risk_aversion:.2f}"))  # Используем f-строки для форматирования
+
+        tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+
+        # Добавляем полосу прокрутки
+        scrollbar = ttk.Scrollbar(employee_window, orient="vertical", command=tree.yview)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        tree.configure(yscrollcommand=scrollbar.set)
+        return
+
+def simulation_attack_read():
+    """Считывает параметры атаки из GUI и запускает симуляцию."""
+    attack_type = attack_type_combobox.get()  # Получаем выбранный тип атаки
+    try:
+        count_attacks = int(count_attacks_entry.get())  # Получаем количество атак
+    except ValueError:
+        status_label.config(text="Ошибка: Введите целое число для количества атак.")
+        return
+
+    department_name = attack_department_combobox.get()  # Получаем выбранный отдел для атаки
+    perform_attack_and_update(department_name, attack_type, count_attacks)  # Вызываем функцию симуляции
+    show_department_employees(department_name) # Показываем табличку
+
+
+def perform_attack_and_update(department_name, attack_type, count_attacks):
+    """
+    Симулирует атаки указанного типа на указанный отдел и обновляет статистику.
+    """
+    global loaded_departments
+
+    if department_name not in loaded_departments:
+        status_label.config(text=f"Отдел '{department_name}' не найден.")
         return
 
     department = loaded_departments[department_name]
+    loaded_departments[department_name] = perform_department_attack_simulation(department, attack_type, count_attacks)
+    # Сохраняем данные в CSV файлы
+    save_department_data_to_csv(department, f"department_{department_name}.csv")  # Сохраняем данные отдела
 
-    # Создаем новое окно
-    employee_window = Toplevel(root)
-    employee_window.title(f"Сотрудники отдела '{department_name}'")
-
-    # Определяем столбцы таблицы (все характеристики сотрудника)
-    columns = ("Имя", "Возраст", "Стаж", "Внимательность", "Тех. грамотность", "Стрессоустойчивость",
-               "Следование инструкциям", "Обучаемость", "Осведомленность о социальной инженерии",
-               "Культура отчетности", "Уважение к авторитетам", "Рабочая нагрузка", "Склонность к риску")
-    tree = ttk.Treeview(employee_window, columns=columns, show="headings") # show="headings" скрывает первый столбец с ID
-
-    # Задаем заголовки для столбцов
-    for col in columns:
-        tree.heading(col, text=col)
-        tree.column(col, width=100)  # Устанавливаем ширину столбцов
-
-    # Заполняем таблицу данными о сотрудниках
-    for employee in department.employees:
-        tree.insert("", tk.END, values=(employee.name, employee.age, employee.experience,
-                                        f"{employee.attentiveness:.2f}", f"{employee.technical_literacy:.2f}",
-                                        f"{employee.stress_resistance:.2f}", f"{employee.instruction_following:.2f}",
-                                        f"{employee.learnability:.2f}", f"{employee.social_engineering_awareness:.2f}",
-                                        f"{employee.reporting_culture:.2f}", f"{employee.authority_respect:.2f}",
-                                        f"{employee.workload:.2f}", f"{employee.risk_aversion:.2f}")) #Используем f-строки для форматирования
-
-    tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-
-    # Добавляем полосу прокрутки
-    scrollbar = ttk.Scrollbar(employee_window, orient="vertical", command=tree.yview)
-    scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-    tree.configure(yscrollcommand=scrollbar.set)
+    status_label.config(text=f"Симуляция атаки '{attack_type}' ({count_attacks} атак) на отдел '{department_name}' завершена. Статистика обновлена и сохранена.")
 
 
-# --- 5. Создание главного окна ---
+# --- Создание главного окна ---
 root = tk.Tk()
 root.title("Симуляция отдела информационной безопасности")
 
-# --- 6. Элементы управления ---
+# --- Элементы управления ---
 # Рамка для элементов управления
 controls_frame = ttk.Frame(root, padding=10)
 controls_frame.pack(side=tk.TOP, fill=tk.X)
@@ -158,7 +195,7 @@ load_button = ttk.Button(controls_frame, text="Загрузить сотрудн
 load_button.grid(row=0, column=3, padx=5, sticky=tk.W)
 
 
-# --- 7. Рамка для информации об отделах ---
+# --- Рамка для информации об отделах ---
 departments_frame = ttk.Frame(root, padding=10)
 departments_frame.pack(side=tk.TOP, fill=tk.X)
 save_departments_button = ttk.Button(departments_frame, text="Сохранить данные по отделам", command=lambda: save_all_department_data(loaded_departments)) #Создаем кнопку
@@ -179,8 +216,32 @@ for dept_name, department in departments.items():
     show_employees_button.grid(row=1, column=i, padx=5, sticky=tk.W) #Размещаем кнопку
     i += 1 #Увеличиваем счетчик
 
+# --- Тип атаки ---
+ttk.Label(controls_frame, text="Тип атаки:").grid(row=1, column=0, sticky=tk.W)
+attack_type_combobox = ttk.Combobox(controls_frame, values=["phishing", "malware", "social_engineering"],
+                                    state="readonly")
+attack_type_combobox.grid(row=1, column=1, sticky=tk.W)
+attack_type_combobox.set("phishing")  # Значение по умолчанию
 
-# --- 8. Рамка для графика ---
+# --- Количество атак ---
+ttk.Label(controls_frame, text="Количество атак:").grid(row=2, column=0, sticky=tk.W)
+count_attacks_entry = ttk.Entry(controls_frame, width=10)
+count_attacks_entry.grid(row=2, column=1, sticky=tk.W)
+count_attacks_entry.insert(0, "1")  # Значение по умолчанию
+
+# --- Отдел для атаки ---
+ttk.Label(controls_frame, text="Отдел для атаки:").grid(row=3, column=0, sticky=tk.W)
+attack_department_combobox = ttk.Combobox(controls_frame, values=list(departments.keys()),
+                                          state="readonly")
+attack_department_combobox.grid(row=3, column=1, sticky=tk.W)
+attack_department_combobox.set(list(departments.keys())[0])  # Первый отдел по умолчанию
+
+# --- Кнопка "Симулировать атаку" ---
+simulate_button = ttk.Button(controls_frame, text="Симулировать атаку", command=lambda: simulation_attack_read())
+simulate_button.grid(row=4, column=0, padx=5, sticky=tk.W)
+
+
+# --- Рамка для графика ---
 chart_frame = ttk.Frame(root, padding=10)
 chart_frame.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
 
