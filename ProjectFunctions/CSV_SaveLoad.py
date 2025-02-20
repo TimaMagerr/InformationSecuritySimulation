@@ -212,3 +212,114 @@ def save_all_department_data(departments):
         # Call the save function for each department
         # Вызываем функцию сохранения для каждого отдела
         save_department_data_to_csv(department, filename)
+
+def load_department_data_from_csv(filename):
+    """Загружает информацию об отделе (сотрудники и статистика) из CSV файла."""
+    departments = {}  # Временный словарь для хранения данных
+    try:
+        with open(filename, 'r', newline='', encoding='utf-8') as csvfile:
+            reader = csv.reader(csvfile, delimiter=';')
+
+            # Читаем название отдела
+            first_row = next(reader, None)
+            if first_row is None or len(first_row) < 2 or first_row[0] != "Department:":
+                print(f"Файл {filename} имеет некорректный формат (отсутствует название отдела).") #Сообщение на русском
+                return None
+
+            department_name = first_row[1]
+
+            # Читаем заголовки
+            headers = next(reader, None)
+            if headers is None:
+                print(f"Файл {filename} пуст или не содержит заголовков.") #Сообщение на русском
+                return None
+
+            # Разделяем заголовки на заголовки сотрудников и статистики
+            employee_headers = ["Name", "Age", "Experience", "Attentiveness",
+                                "Technical Literacy", "Stress Resistance", "Instruction Following",
+                                "Learnability", "Social Engineering Awareness", "Reporting Culture",
+                                "Authority Respect", "Workload", "Risk Aversion"]
+            attack_headers = ["Phishing Success Count", "Phishing Total Attacks",
+                              "Malware Success Count", "Malware Total Attacks",
+                              "Social Engineering Success Count",
+                              "Social Engineering Total Attacks"]
+
+            # Проверяем, что заголовки соответствуют ожидаемым
+            expected_headers = employee_headers + attack_headers
+            if headers != expected_headers:
+                print("Структура CSV файла некорректна!") #Сообщение на русском
+                return None
+
+            # Создаем отдел
+            department = Department(department_name)
+
+            for row in reader:
+                try:
+                    # Разделяем строку на данные сотрудника и статистику
+                    employee_data = row[:len(employee_headers)]  # Берем данные о сотруднике
+                    attack_data = row[len(employee_headers):]  # Берем данные об атаках
+
+                    name, age, experience, attentiveness, technical_literacy, stress_resistance, instruction_following, learnability, social_engineering_awareness, reporting_culture, authority_respect, workload, risk_aversion = employee_data  # Распаковываем
+
+                    # Преобразуем типы данных
+                    age = int(age)
+                    experience = int(experience)
+                    attentiveness = float(attentiveness)
+                    technical_literacy = float(technical_literacy)
+                    stress_resistance = float(stress_resistance)
+                    instruction_following = float(instruction_following)
+                    learnability = float(learnability)
+                    social_engineering_awareness = float(social_engineering_awareness)
+                    reporting_culture = float(reporting_culture)
+                    authority_respect = float(authority_respect)
+                    workload = float(workload)
+                    risk_aversion = float(risk_aversion)
+
+                    employee = Employee(
+                        name=name,
+                        department=department_name,
+                        age=age,
+                        experience=experience,
+                        attentiveness=attentiveness,
+                        technical_literacy=technical_literacy,
+                        stress_resistance=stress_resistance,
+                        instruction_following=instruction_following,
+                        learnability=learnability,
+                        social_engineering_awareness=social_engineering_awareness,
+                        reporting_culture=reporting_culture,
+                        authority_respect=authority_respect,
+                        workload=workload,
+                        risk_aversion=risk_aversion
+                    )
+
+                    # Загружаем статистику об атаках
+                    phishing_success_count = int(attack_data[0])
+                    phishing_total_attacks = int(attack_data[1])
+                    malware_success_count = int(attack_data[2])
+                    malware_total_attacks = int(attack_data[3])
+                    social_engineering_success_count = int(attack_data[4])
+                    social_engineering_total_attacks = int(attack_data[5])
+
+                    employee.attack_stats["phishing"]["success_count"] = phishing_success_count
+                    employee.attack_stats["phishing"]["total_attacks"] = phishing_total_attacks
+                    employee.attack_stats["malware"]["success_count"] = malware_success_count
+                    employee.attack_stats["malware"]["total_attacks"] = malware_total_attacks
+                    employee.attack_stats["social_engineering"]["success_count"] = social_engineering_success_count
+                    employee.attack_stats["social_engineering"]["total_attacks"] = social_engineering_total_attacks
+
+                    department.add_employee(employee)  # Добавляем сотрудника
+
+                except Exception as e:
+                    print(f"Ошибка при обработке строки: {row}. Ошибка: {e}") #Сообщение на русском
+                    return None
+
+            print(f"Данные отдела '{department_name}' загружены из файла {filename}") #Сообщение на русском
+            departments[department_name] = department
+            return departments
+
+    except FileNotFoundError:
+        print(f"Файл {filename} не найден!") #Сообщение на русском
+        return None
+    except Exception as e:
+        print(f"Произошла ошибка при загрузке данных из файла {filename}: {e}") #Сообщение на русском
+        return None

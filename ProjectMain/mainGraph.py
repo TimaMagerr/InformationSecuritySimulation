@@ -1,13 +1,13 @@
 import random
 import tkinter as tk
-from tkinter import ttk, Toplevel, Text, Scrollbar  # Добавлены Toplevel, Text, Scrollbar
+from tkinter import ttk, Toplevel, Text, Scrollbar, filedialog  # Добавлены Toplevel, Text, Scrollbar
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
 from ProjectClasses.DepartmentC import departments
 from ProjectFunctions.AttackSimulation import perform_department_attack_simulation
 from ProjectFunctions.CSV_SaveLoad import save_employees_to_csv, load_employees_from_csv, save_department_data_to_csv, \
-    save_all_department_data
+    save_all_department_data, load_department_data_from_csv
 from ProjectFunctions.EmployeeF import generate_employees
 
 # --- Глобальные переменные ---
@@ -48,6 +48,29 @@ def load_employees():
         status_label.config(text=f"Загружено {num_employees} сотрудников из файла.")
     else:
         status_label.config(text="Ошибка загрузки данных. Проверьте CSV файл.")
+
+def load_departments_data():
+    """Загружает данные отделов из отдельных CSV файлов."""
+    global loaded_departments
+
+    # Открываем диалоговое окно для выбора нескольких файлов
+    filenames = filedialog.askopenfilenames(
+        initialdir=".",
+        title="Выберите CSV файлы с данными отделов",
+        filetypes=(("CSV files", "*.csv"), ("Все файлы", "*.*"))
+    )
+
+    if not filenames:
+        print("Загрузка отменена пользователем.")
+        return
+
+    for filename in filenames:
+        department_data = load_department_data_from_csv(filename)
+        if department_data:
+            loaded_departments.update(department_data)
+
+    update_department_info()  # Обновляем информацию об отделах в GUI
+    status_label.config(text="Данные отделов загружены из файлов.")
 
 
 def update_department_info():
@@ -109,9 +132,12 @@ def show_department_employees(department_name):
         employee_window.title(f"Сотрудники отдела '{department_name}'")
 
         # Определяем столбцы таблицы (все характеристики сотрудника)
-        columns = ("Имя", "Возраст", "Стаж", "Внимательность", "Тех. грамотность", "Стрессоустойчивость",
+        columns = ["Имя", "Возраст", "Стаж", "Внимательность", "Тех. грамотность", "Стрессоустойчивость",
                    "Следование инструкциям", "Обучаемость", "Осведомленность о социальной инженерии",
-                   "Культура отчетности", "Уважение к авторитетам", "Рабочая нагрузка", "Склонность к риску")
+                   "Культура отчетности", "Уважение к авторитетам", "Рабочая нагрузка", "Склонность к риску",
+                   "Количество успешных фишинг-атак", "Всего фишинг-атак",
+                   "Количество успешных атак вредоносного ПО", "Всего атак вредоносного ПО",
+                   "Количество успешных атак социальной инженерии", "Всего атак социальной инженерии"]
         tree = ttk.Treeview(employee_window, columns=columns,
                             show="headings")  # show="headings" скрывает первый столбец с ID
 
@@ -130,7 +156,13 @@ def show_department_employees(department_name):
                                             f"{employee.social_engineering_awareness:.2f}",
                                             f"{employee.reporting_culture:.2f}", f"{employee.authority_respect:.2f}",
                                             f"{employee.workload:.2f}",
-                                            f"{employee.risk_aversion:.2f}"))  # Используем f-строки для форматирования
+                                            f"{employee.risk_aversion:.2f}",
+                                            employee.attack_stats['phishing']['success_count'],
+                                            employee.attack_stats['phishing']['total_attacks'],
+                                            employee.attack_stats['malware']['success_count'],
+                                            employee.attack_stats['malware']['total_attacks'],
+                                            employee.attack_stats['social_engineering']['success_count'],
+                                            employee.attack_stats['social_engineering']['total_attacks']))
 
         tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
@@ -151,7 +183,6 @@ def simulation_attack_read():
 
     department_name = attack_department_combobox.get()  # Получаем выбранный отдел для атаки
     perform_attack_and_update(department_name, attack_type, count_attacks)  # Вызываем функцию симуляции
-    show_department_employees(department_name) # Показываем табличку
 
 
 def perform_attack_and_update(department_name, attack_type, count_attacks):
@@ -168,7 +199,7 @@ def perform_attack_and_update(department_name, attack_type, count_attacks):
     loaded_departments[department_name] = perform_department_attack_simulation(department, attack_type, count_attacks)
     # Сохраняем данные в CSV файлы
     save_department_data_to_csv(department, f"department_{department_name}.csv")  # Сохраняем данные отдела
-
+    show_department_employees(department_name) # Показываем табличку
     status_label.config(text=f"Симуляция атаки '{attack_type}' ({count_attacks} атак) на отдел '{department_name}' завершена. Статистика обновлена и сохранена.")
 
 
@@ -200,6 +231,9 @@ departments_frame = ttk.Frame(root, padding=10)
 departments_frame.pack(side=tk.TOP, fill=tk.X)
 save_departments_button = ttk.Button(departments_frame, text="Сохранить данные по отделам", command=lambda: save_all_department_data(loaded_departments)) #Создаем кнопку
 save_departments_button.grid(row=2, column=0, padx=5, sticky=tk.W) #Выделяем место
+# Кнопка загрузки данных отделов
+load_departments_button = ttk.Button(departments_frame, text="Загрузить данные отделов", command=load_departments_data)
+load_departments_button.grid(row=2, column=1, padx=5, sticky=tk.W)
 
 department_labels = {} #Словарь для хранения labels
 
@@ -215,6 +249,8 @@ for dept_name, department in departments.items():
     show_employees_button = ttk.Button(departments_frame, text=f"Показать сотрудников {dept_name}", command=lambda name=dept_name: show_department_employees(name)) #Создаем кнопку
     show_employees_button.grid(row=1, column=i, padx=5, sticky=tk.W) #Размещаем кнопку
     i += 1 #Увеличиваем счетчик
+
+
 
 # --- Тип атаки ---
 ttk.Label(controls_frame, text="Тип атаки:").grid(row=1, column=0, sticky=tk.W)
