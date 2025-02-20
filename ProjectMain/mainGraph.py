@@ -1,6 +1,5 @@
-import random
 import tkinter as tk
-from tkinter import ttk, Toplevel, Text, Scrollbar, filedialog  # Добавлены Toplevel, Text, Scrollbar
+from tkinter import ttk, Toplevel, filedialog
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
@@ -9,10 +8,6 @@ from ProjectFunctions.AttackSimulation import perform_department_attack_simulati
 from ProjectFunctions.CSV_SaveLoad import save_employees_to_csv, load_employees_from_csv, save_department_data_to_csv, \
     save_all_department_data, load_department_data_from_csv
 from ProjectFunctions.EmployeeF import generate_employees
-
-# --- Глобальные переменные ---
-loaded_departments = {}  # Здесь будут храниться загруженные данные
-num_employees = 0 # Здесь будет храниться количество сотрудников
 
 # --- Функции для работы с данными и графиками ---
 def create_employees():
@@ -32,7 +27,6 @@ def create_employees():
     update_department_info()  # Обновляем информацию об отделах
     update_chart()  # Обновляем график
     status_label.config(text=f"Создано {num_employees} сотрудников и сохранено в файл.")
-
 
 def load_employees():
     """Загружает сотрудников из CSV."""
@@ -184,7 +178,6 @@ def simulation_attack_read():
     department_name = attack_department_combobox.get()  # Получаем выбранный отдел для атаки
     perform_attack_and_update(department_name, attack_type, count_attacks)  # Вызываем функцию симуляции
 
-
 def perform_attack_and_update(department_name, attack_type, count_attacks):
     """
     Симулирует атаки указанного типа на указанный отдел и обновляет статистику.
@@ -202,7 +195,6 @@ def perform_attack_and_update(department_name, attack_type, count_attacks):
     show_department_employees(department_name) # Показываем табличку
     status_label.config(text=f"Симуляция атаки '{attack_type}' ({count_attacks} атак) на отдел '{department_name}' завершена. Статистика обновлена и сохранена.")
 
-
 # --- Создание главного окна ---
 root = tk.Tk()
 root.title("Симуляция отдела информационной безопасности")
@@ -212,19 +204,17 @@ root.title("Симуляция отдела информационной без�
 controls_frame = ttk.Frame(root, padding=10)
 controls_frame.pack(side=tk.TOP, fill=tk.X)
 
-# Количество сотрудников
+# --- Количество сотрудников ---
 ttk.Label(controls_frame, text="Количество сотрудников:").grid(row=0, column=0, sticky=tk.W)
 num_employees_entry = ttk.Entry(controls_frame, width=10)
 num_employees_entry.grid(row=0, column=1, sticky=tk.W)
 num_employees_entry.insert(0, "100")  # Значение по умолчанию
 
-# Кнопки
+# --- Кнопки ---
 create_button = ttk.Button(controls_frame, text="Создать сотрудников", command=create_employees)
 create_button.grid(row=0, column=2, padx=5, sticky=tk.W)
-
 load_button = ttk.Button(controls_frame, text="Загрузить сотрудников из CSV", command=load_employees)
 load_button.grid(row=0, column=3, padx=5, sticky=tk.W)
-
 
 # --- Рамка для информации об отделах ---
 departments_frame = ttk.Frame(root, padding=10)
@@ -248,14 +238,11 @@ for dept_name, department in departments.items():
     # Создаем кнопку "Показать сотрудников" для каждого отдела
     show_employees_button = ttk.Button(departments_frame, text=f"Показать сотрудников {dept_name}", command=lambda name=dept_name: show_department_employees(name)) #Создаем кнопку
     show_employees_button.grid(row=1, column=i, padx=5, sticky=tk.W) #Размещаем кнопку
-    i += 1 #Увеличиваем счетчик
-
-
+    i += 1
 
 # --- Тип атаки ---
 ttk.Label(controls_frame, text="Тип атаки:").grid(row=1, column=0, sticky=tk.W)
-attack_type_combobox = ttk.Combobox(controls_frame, values=["phishing", "malware", "social_engineering"],
-                                    state="readonly")
+attack_type_combobox = ttk.Combobox(controls_frame, values=["phishing", "malware", "social_engineering"], state="readonly")
 attack_type_combobox.grid(row=1, column=1, sticky=tk.W)
 attack_type_combobox.set("phishing")  # Значение по умолчанию
 
@@ -267,8 +254,7 @@ count_attacks_entry.insert(0, "1")  # Значение по умолчанию
 
 # --- Отдел для атаки ---
 ttk.Label(controls_frame, text="Отдел для атаки:").grid(row=3, column=0, sticky=tk.W)
-attack_department_combobox = ttk.Combobox(controls_frame, values=list(departments.keys()),
-                                          state="readonly")
+attack_department_combobox = ttk.Combobox(controls_frame, values=list(departments.keys()), state="readonly")
 attack_department_combobox.grid(row=3, column=1, sticky=tk.W)
 attack_department_combobox.set(list(departments.keys())[0])  # Первый отдел по умолчанию
 
@@ -276,15 +262,13 @@ attack_department_combobox.set(list(departments.keys())[0])  # Первый от
 simulate_button = ttk.Button(controls_frame, text="Симулировать атаку", command=lambda: simulation_attack_read())
 simulate_button.grid(row=4, column=0, padx=5, sticky=tk.W)
 
-
 # --- Рамка для графика ---
 chart_frame = ttk.Frame(root, padding=10)
 chart_frame.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
 
-
-# --- 9. Метка статуса ---
+# --- Метка статуса ---
 status_label = ttk.Label(root, text="")
 status_label.pack(side=tk.BOTTOM, fill=tk.X, padx=10, pady=5)
 
-# --- 10. Запуск главного цикла ---
+# --- Запуск главного цикла ---
 root.mainloop()
