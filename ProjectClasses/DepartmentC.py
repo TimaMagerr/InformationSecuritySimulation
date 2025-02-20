@@ -33,11 +33,6 @@ class Department:
     def __init__(self, name):
         self.name = name
         self.employees = []
-        self.attack_stats = {
-            "phishing": {"success_probability": 0.0, "success_count": 0, "total_attacks": 0},
-            "malware": {"success_probability": 0.0, "success_count": 0, "total_attacks": 0},
-            "social_engineering": {"success_probability": 0.0, "success_count": 0, "total_attacks": 0}
-        }  # ВВЕСТИ ДЛЯ СОТРУДНИКОВ
 
     def add_employee(self, employee):
         self.employees.append(employee)

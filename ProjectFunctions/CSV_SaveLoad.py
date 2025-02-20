@@ -168,9 +168,9 @@ def save_department_data_to_csv(department, filename=None):
                                 "Technical Literacy", "Stress Resistance", "Instruction Following",
                                 "Learnability", "Social Engineering Awareness", "Reporting Culture",
                                 "Authority Respect", "Workload", "Risk Aversion"]
-            attack_headers = ["Phishing Success Probability", "Phishing Success Count", "Phishing Total Attacks",
-                              "Malware Success Probability", "Malware Success Count", "Malware Total Attacks",
-                              "Social Engineering Success Probability", "Social Engineering Success Count",
+            attack_headers = ["Phishing Success Count", "Phishing Total Attacks",
+                              "Malware Success Count", "Malware Total Attacks",
+                              "Social Engineering Success Count",
                               "Social Engineering Total Attacks"]
 
             writer.writerow(["Department:", department.name])  # Записываем название отдела в первой строке
@@ -186,15 +186,12 @@ def save_department_data_to_csv(department, filename=None):
                        employee.risk_aversion]
 
                 # Статистика об атаках берется *из отдела*, а не из сотрудника (у сотрудника нет своей статистики)
-                attack_stats = [department.attack_stats["phishing"]["success_probability"],
-                                department.attack_stats["phishing"]["success_count"],
-                                department.attack_stats["phishing"]["total_attacks"],
-                                department.attack_stats["malware"]["success_probability"],
-                                department.attack_stats["malware"]["success_count"],
-                                department.attack_stats["malware"]["total_attacks"],
-                                department.attack_stats["social_engineering"]["success_probability"],
-                                department.attack_stats["social_engineering"]["success_count"],
-                                department.attack_stats["social_engineering"]["total_attacks"]]
+                attack_stats = [employee.attack_stats["phishing"]["success_count"],
+                                employee.attack_stats["phishing"]["total_attacks"],
+                                employee.attack_stats["malware"]["success_count"],
+                                employee.attack_stats["malware"]["total_attacks"],
+                                employee.attack_stats["social_engineering"]["success_count"],
+                                employee.attack_stats["social_engineering"]["total_attacks"]]
 
                 writer.writerow(row + attack_stats)  # Записываем строку с данными сотрудника и статистикой отдела
 

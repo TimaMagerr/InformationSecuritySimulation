@@ -11,32 +11,20 @@ def simulate_attack(employee, attack_type, attack_complexity):
     return success, probability
 
 def perform_department_attack_simulation(department, attack_type, num_attacks):
-    """Симулирует несколько атак на отдел и обновляет статистику."""
-    total_success_probability = 0
-    success_count = 0
-
+    """Симулирует несколько атак на отдел и обновляет статистику для *каждого сотрудника*."""
     for employee in department.employees:
+        success_count = 0
+
         for _ in range(num_attacks):
             attack_complexity = random.random()
-            success, probability = simulate_attack(employee, attack_type, attack_complexity)
+            success, _ = simulate_attack(employee, attack_type, attack_complexity)
 
-            total_success_probability += probability
             if success:
                 success_count += 1
 
-    # Обновляем статистику отдела
-    total_attacks = num_attacks * len(department.employees)
-    success_probability = total_success_probability / total_attacks if total_attacks > 0 else 0
+        # Обновляем статистику сотрудника
+        employee.attack_stats[attack_type]["total_attacks"] += num_attacks
+        employee.attack_stats[attack_type]["success_count"] += success_count
 
-    department.attack_stats = {
-        "phishing": {"success_probability": 0, "success_count": 0, "total_attacks": 0},
-        "malware": {"success_probability": 0, "success_count": 0, "total_attacks": 0},
-        "social_engineering": {"success_probability": 0, "success_count": 0, "total_attacks": 0}
-    }
-
-    department.attack_stats[attack_type]["total_attacks"] = total_attacks
-    department.attack_stats[attack_type]["success_count"] = success_count
-    department.attack_stats[attack_type]["success_probability"] = success_probability
-
-    return department  #Возвращаем department с обновленной статистикой
+    return department
 

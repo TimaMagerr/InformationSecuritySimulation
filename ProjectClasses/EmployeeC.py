@@ -34,6 +34,10 @@ class Employee:
         self.authority_respect = authority_respect
         self.workload = workload
         self.risk_aversion = risk_aversion
+        self.attack_stats = {
+            "phishing": {"success_count": 0, "total_attacks": 0},
+            "malware": {"success_count": 0, "total_attacks": 0},
+            "social_engineering": {"success_count": 0, "total_attacks": 0} }
 
     def __str__(self):
         """
