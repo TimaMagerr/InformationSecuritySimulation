@@ -49,12 +49,3 @@ def apply_training(employee, training_type, intensity):
         print(f"Тренинг типа '{training_type}' успешно применен к сотруднику {employee.name}")
     else: # Если меньше границы - не усвоили тренинг
         print(f"Тренинг типа '{training_type}' не оказал влияния на сотрудника {employee.name}")
-
-from ProjectFunctions.TrainingSimulation import apply_training #Укажите путь
-
-def perform_department_training(department, training_type, intensity):
-    """Применяет тренинг указанного типа ко всем сотрудникам отдела."""
-    for employee in department.employees:
-        apply_training(employee, training_type, intensity)
-    return department
-

@@ -9,6 +9,7 @@ from ProjectFunctions.AttackSimulation import perform_department_attack_simulati
 from ProjectFunctions.CSV_SaveLoad import save_employees_to_csv, load_employees_from_csv, save_department_data_to_csv, \
     save_all_department_data, load_department_data_from_csv
 from ProjectFunctions.EmployeeF import generate_employees
+from ProjectFunctions.TrainingF import perform_department_training
 
 # --- Глобальные переменные ---
 loaded_departments = {}  # Здесь будут храниться загруженные данные
@@ -184,6 +185,20 @@ def simulation_attack_read():
     department_name = attack_department_combobox.get()  # Получаем выбранный отдел для атаки
     perform_attack_and_update(department_name, attack_type, count_attacks)  # Вызываем функцию симуляции
 
+def perform_training_read():
+    """Считывает параметры тренинга из GUI и запускает тренинг для отдела."""
+    training_type = training_type_combobox.get()
+    try:
+        intensity = float(intensity_entry.get())
+        if not 0.0 <= intensity <= 1.0:
+            status_label.config(text="Ошибка: Интенсивность тренинга должна быть от 0.0 до 1.0.")
+            return
+    except ValueError:
+        status_label.config(text="Ошибка: Введите число для интенсивности тренинга.")
+        return
+
+    department_name = attack_department_combobox.get()  # Получаем выбранный отдел для атаки
+    perform_training_and_update(department_name, training_type, intensity)
 
 def perform_attack_and_update(department_name, attack_type, count_attacks):
     """
@@ -202,6 +217,23 @@ def perform_attack_and_update(department_name, attack_type, count_attacks):
     show_department_employees(department_name) # Показываем табличку
     status_label.config(text=f"Симуляция атаки '{attack_type}' ({count_attacks} атак) на отдел '{department_name}' завершена. Статистика обновлена и сохранена.")
 
+def perform_training_and_update(department_name, training_type, intensity):
+    """
+    Проводит тренинг указанного типа для выбранного отдела и обновляет статистику в CSV файлах.
+    """
+    global loaded_departments
+
+    if department_name not in loaded_departments:
+        status_label.config(text=f"Отдел '{department_name}' не найден.")
+        return
+
+    department = loaded_departments[department_name]
+    department = perform_department_training(department, training_type, intensity)
+    # Сохраняем данные в CSV файлы
+    save_department_data_to_csv(department, f"department_{department_name}.csv")  # Сохраняем данные отдела
+    show_department_employees(department_name) #Показываем табличку
+
+    status_label.config(text=f"Тренинг '{training_type}' с интенсивностью {intensity:.2f} успешно проведен для отдела '{department_name}'.")
 
 # --- Создание главного окна ---
 root = tk.Tk()
@@ -266,7 +298,7 @@ count_attacks_entry.grid(row=2, column=1, sticky=tk.W)
 count_attacks_entry.insert(0, "1")  # Значение по умолчанию
 
 # --- Отдел для атаки ---
-ttk.Label(controls_frame, text="Отдел для атаки:").grid(row=3, column=0, sticky=tk.W)
+ttk.Label(controls_frame, text="Отдел для атаки/тренинга:").grid(row=3, column=0, sticky=tk.W)
 attack_department_combobox = ttk.Combobox(controls_frame, values=list(departments.keys()),
                                           state="readonly")
 attack_department_combobox.grid(row=3, column=1, sticky=tk.W)
@@ -276,6 +308,23 @@ attack_department_combobox.set(list(departments.keys())[0])  # Первый от
 simulate_button = ttk.Button(controls_frame, text="Симулировать атаку", command=lambda: simulation_attack_read())
 simulate_button.grid(row=4, column=0, padx=5, sticky=tk.W)
 
+# --- Тип тренинга ---
+ttk.Label(controls_frame, text="Тип тренинга:").grid(row=5, column=0, sticky=tk.W)
+training_type_combobox = ttk.Combobox(controls_frame,
+                                      values=["phishing", "password", "data_handling", "stress", "social_engineering"],
+                                      state="readonly")
+training_type_combobox.grid(row=5, column=1, sticky=tk.W)
+training_type_combobox.set("phishing")  # Значение по умолчанию
+
+# --- Интенсивность тренинга ---
+ttk.Label(controls_frame, text="Интенсивность тренинга:").grid(row=6, column=0, sticky=tk.W)
+intensity_entry = ttk.Entry(controls_frame, width=10)
+intensity_entry.grid(row=6, column=1, sticky=tk.W)
+intensity_entry.insert(0, "0.5")  # Значение по умолчанию
+
+# --- Кнопка "Провести тренинг" ---
+train_button = ttk.Button(controls_frame, text="Провести тренинг", command=lambda: perform_training_read())
+train_button.grid(row=7, column=0, padx=5, sticky=tk.W)
 
 # --- Рамка для графика ---
 chart_frame = ttk.Frame(root, padding=10)
