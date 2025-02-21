@@ -26,6 +26,7 @@ def perform_department_attack_simulation(department, attack_type, num_attacks):
         # Обновляем статистику сотрудника
         employee.attack_stats[attack_type]["total_attacks"] += num_attacks
         employee.attack_stats[attack_type]["success_count"] += success_count
+    print(f"Атака типа '{attack_type}' успешно проведена на отдел")
 
     return department
 

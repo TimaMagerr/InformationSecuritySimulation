@@ -235,6 +235,80 @@ def perform_training_and_update(department_name, training_type, intensity):
 
     status_label.config(text=f"Тренинг '{training_type}' с интенсивностью {intensity:.2f} успешно проведен для отдела '{department_name}'.")
 
+
+def perform_attacks_and_training(department_name, num_attacks=5):
+    """
+    Проводит серию атак каждого типа, затем проводит выбранный тренинг и показывает прогресс.
+
+    Args:
+        department_name (str): Название отдела.
+        num_attacks (int): Количество атак каждого типа для проведения.
+    """
+    global loaded_departments
+
+    if department_name not in loaded_departments:
+        status_label.config(text=f"Отдел '{department_name}' не найден.")
+        return
+
+    department = loaded_departments[department_name]
+
+    # Проводим атаки каждого типа
+    for attack_type in ["phishing", "malware", "social_engineering"]:
+        status_label.config(text=f"Проведение серии атак '{attack_type}'...")
+        root.update()  # Обновляем GUI, чтобы сообщение отобразилось
+        department = perform_department_attack_simulation(department, attack_type, num_attacks)
+        save_department_data_to_csv(department, f"department_{department_name}.csv")  # Сохраняем данные отдела
+
+    # Запоминаем характеристики сотрудников ДО тренинга
+    employee_data_before = {}
+    for employee in department.employees:
+        employee_data_before[employee.name] = {
+            "attentiveness": employee.attentiveness,
+            "technical_literacy": employee.technical_literacy,
+            "social_engineering_awareness": employee.social_engineering_awareness,
+            "stress_resistance": employee.stress_resistance,
+            "instruction_following": employee.instruction_following,
+            "learnability": employee.learnability,
+            "reporting_culture": employee.reporting_culture,
+            "authority_respect": employee.authority_respect,
+            "workload": employee.workload,
+            "risk_aversion": employee.risk_aversion
+        }
+
+    # Проводим тренинг
+    training_type = training_type_combobox.get()
+    try:
+        intensity = float(intensity_entry.get())
+        if not 0.0 <= intensity <= 1.0:
+            status_label.config(text="Ошибка: Интенсивность тренинга должна быть от 0.0 до 1.0.")
+            return
+    except ValueError:
+        status_label.config(text="Ошибка: Введите число для интенсивности тренинга.")
+        return
+
+    status_label.config(text=f"Проведение тренинга '{training_type}'...")
+    root.update()  # Обновляем GUI, чтобы сообщение отобразилось
+    department = perform_department_training(department, training_type, intensity)
+    save_department_data_to_csv(department, f"department_{department_name}.csv")  # Сохраняем данные отдела
+
+    # Выводим прогресс в консоль (Вариант 1)
+    print("\n=== Прогресс после тренинга ===")
+    for employee in department.employees:
+        print(f"Сотрудник: {employee.name}")
+        for characteristic, value_before in employee_data_before[employee.name].items():
+            value_after = getattr(employee, characteristic)
+            change = value_after - value_before
+            percentage_change = (change / value_before) * 100 if value_before != 0 else 0
+            print(f"  {characteristic}: {value_before:.2f} -> {value_after:.2f} ({percentage_change:.2f}%)")
+
+    show_department_employees(department_name)
+    status_label.config(text="Атаки и тренинг проведены. Прогресс выведен в консоль.")
+
+def run_scenario():
+    """Запускает сценарий атак и тренинга для выбранного отдела."""
+    department_name = attack_department_combobox.get()
+    perform_attacks_and_training(department_name)
+
 # --- Создание главного окна ---
 root = tk.Tk()
 root.title("Симуляция отдела информационной безопасности")
@@ -325,6 +399,10 @@ intensity_entry.insert(0, "0.5")  # Значение по умолчанию
 # --- Кнопка "Провести тренинг" ---
 train_button = ttk.Button(controls_frame, text="Провести тренинг", command=lambda: perform_training_read())
 train_button.grid(row=7, column=0, padx=5, sticky=tk.W)
+
+# --- Кнопка "Запустить сценарий" ---
+run_scenario_button = ttk.Button(controls_frame, text="Запустить сценарий", command=lambda: run_scenario())
+run_scenario_button.grid(row=8, column=0, padx=5, sticky=tk.W)
 
 # --- Рамка для графика ---
 chart_frame = ttk.Frame(root, padding=10)
