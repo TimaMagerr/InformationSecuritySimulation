@@ -2,6 +2,7 @@ import random
 import tkinter as tk
 from tkinter import ttk, Toplevel, Text, Scrollbar, filedialog  # Добавлены Toplevel, Text, Scrollbar
 import matplotlib.pyplot as plt
+import numpy as np
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
 from ProjectClasses.DepartmentC import departments
@@ -202,7 +203,7 @@ def perform_training_read():
 
 def perform_attack_and_update(department_name, attack_type, count_attacks):
     """
-    Симулирует атаки указанного типа на указанный отдел и обновляет статистику.
+    Симулирует атаки указанного типа на указанный отдел, обновляет статистику и отображает комбинированную столбчатую диаграмму.
     """
     global loaded_departments
 
@@ -211,11 +212,36 @@ def perform_attack_and_update(department_name, attack_type, count_attacks):
         return
 
     department = loaded_departments[department_name]
-    loaded_departments[department_name] = perform_department_attack_simulation(department, attack_type, count_attacks)
-    # Сохраняем данные в CSV файлы
-    save_department_data_to_csv(department, f"department_{department_name}.csv")  # Сохраняем данные отдела
-    show_department_employees(department_name) # Показываем табличку
+    department = perform_department_attack_simulation(department, attack_type, count_attacks)
+    save_department_data_to_csv(department, f"department_{department_name}.csv")
+    show_department_employees(department_name)
     status_label.config(text=f"Симуляция атаки '{attack_type}' ({count_attacks} атак) на отдел '{department_name}' завершена. Статистика обновлена и сохранена.")
+
+    employee_names = [employee.name for employee in department.employees]
+    success_counts = []
+    total_attacks = []
+
+    for employee in department.employees:
+        success_counts.append(employee.attack_stats[attack_type]["success_count"])
+        total_attacks.append(employee.attack_stats[attack_type]["total_attacks"])
+
+    failure_counts = [total - success for total, success in zip(total_attacks, success_counts)] #Кол-во неуспешных атак
+
+    # Создаем график
+    fig, ax = plt.subplots(figsize=(10, 6))
+    width = 0.75 #Ширина столбца
+
+    ax.bar(employee_names, success_counts, width, label='Успешные атаки', color='green') #Успешные атаки
+    ax.bar(employee_names, failure_counts, width, bottom=success_counts, label='Неуспешные атаки', color='red') #Неуспешные атаки
+
+    ax.set_xlabel('Сотрудники') #Надпись для Х
+    ax.set_ylabel('Количество атак') #Надпись для Y
+    ax.set_title(f'Результаты атак типа "{attack_type}" в отделе "{department_name}"') #Заголовок
+    ax.legend() #Легенда
+
+    plt.xticks(rotation=45, ha='right') #Подписи X
+    plt.tight_layout() #Автоматическое размещение элементов, чтобы они не налезали друг на друга
+    plt.show() #Показ графика
 
 def perform_training_and_update(department_name, training_type, intensity):
     """
@@ -234,15 +260,12 @@ def perform_training_and_update(department_name, training_type, intensity):
     show_department_employees(department_name) #Показываем табличку
 
     status_label.config(text=f"Тренинг '{training_type}' с интенсивностью {intensity:.2f} успешно проведен для отдела '{department_name}'.")
+    show_training_progress(department_name, training_type)
 
-
-def perform_attacks_and_training(department_name, num_attacks=5):
+#Функция для отображения прогресса после тренинга:
+def show_training_progress(department_name, training_type):
     """
-    Проводит серию атак каждого типа, затем проводит выбранный тренинг и показывает прогресс.
-
-    Args:
-        department_name (str): Название отдела.
-        num_attacks (int): Количество атак каждого типа для проведения.
+    Отображает график прогресса сотрудников после тренинга.
     """
     global loaded_departments
 
@@ -252,62 +275,96 @@ def perform_attacks_and_training(department_name, num_attacks=5):
 
     department = loaded_departments[department_name]
 
-    # Проводим атаки каждого типа
-    for attack_type in ["phishing", "malware", "social_engineering"]:
-        status_label.config(text=f"Проведение серии атак '{attack_type}'...")
-        root.update()  # Обновляем GUI, чтобы сообщение отобразилось
-        department = perform_department_attack_simulation(department, attack_type, num_attacks)
-        save_department_data_to_csv(department, f"department_{department_name}.csv")  # Сохраняем данные отдела
+    employee_names = [employee.name for employee in department.employees]
+    initial_values = {}
+    final_values = {}
 
-    # Запоминаем характеристики сотрудников ДО тренинга
-    employee_data_before = {}
+    # Получаем начальные и конечные значения характеристик для каждого сотрудника
     for employee in department.employees:
-        employee_data_before[employee.name] = {
-            "attentiveness": employee.attentiveness,
-            "technical_literacy": employee.technical_literacy,
-            "social_engineering_awareness": employee.social_engineering_awareness,
-            "stress_resistance": employee.stress_resistance,
-            "instruction_following": employee.instruction_following,
-            "learnability": employee.learnability,
-            "reporting_culture": employee.reporting_culture,
-            "authority_respect": employee.authority_respect,
-            "workload": employee.workload,
-            "risk_aversion": employee.risk_aversion
-        }
-
-    # Проводим тренинг
-    training_type = training_type_combobox.get()
-    try:
-        intensity = float(intensity_entry.get())
-        if not 0.0 <= intensity <= 1.0:
-            status_label.config(text="Ошибка: Интенсивность тренинга должна быть от 0.0 до 1.0.")
+        if training_type == "phishing":
+            characteristics = ["attentiveness", "technical_literacy", "social_engineering_awareness"]
+        elif training_type == "password":
+            characteristics = ["instruction_following", "technical_literacy", "risk_aversion"]
+        elif training_type == "data_handling":
+            characteristics = ["instruction_following", "technical_literacy", "attentiveness"]
+        elif training_type == "stress":
+            characteristics = ["stress_resistance", "reporting_culture", "attentiveness"]
+        elif training_type == "social_engineering":
+            characteristics = ["social_engineering_awareness", "attentiveness", "authority_respect", "risk_aversion"]
+        else:
+            status_label.config(text="Неизвестный тип тренинга.")
             return
-    except ValueError:
-        status_label.config(text="Ошибка: Введите число для интенсивности тренинга.")
+
+        initial_values[employee.name] = {char: getattr(employee, char) for char in characteristics}
+        final_values[employee.name] = {}
+        for char in characteristics:
+            final_values[employee.name][char] = getattr(employee, char)
+
+    # --- Создаем график ---
+    fig, ax = plt.subplots(figsize=(12, 8))  # Увеличиваем размер графика для лучшей читаемости
+    width = 0.35  # Ширина столбцов
+
+    x = np.arange(len(employee_names))  # Позиции для столбцов
+
+    # Создаем столбцы для начальных и конечных значений
+    for i, char in enumerate(characteristics):
+        initial = [initial_values[name][char] for name in employee_names]
+        final = [final_values[name][char] for name in employee_names]
+
+        x_pos = x + i * width  # Смещаем столбцы для каждой характеристики
+        ax.bar(x_pos, initial, width, label=f"{char} (Начальное)", color=f'C{i}', alpha=0.5)
+        ax.bar(x_pos, final, width, label=f"{char} (Конечное)", color=f'C{i}')
+
+    # Настраиваем график
+    ax.set_xlabel('Сотрудники')
+    ax.set_ylabel('Значение характеристики')
+    ax.set_title(f'Прогресс после тренинга "{training_type}" в отделе "{department_name}"')
+    ax.set_xticks(x + width * (len(characteristics) - 1) / 2)  # Выравниваем метки оси X
+    ax.set_xticklabels(employee_names, rotation=45, ha='right')  # Наклоняем подписи оси X для читаемости
+
+    ax.legend()  # Добавляем легенду
+
+    plt.tight_layout()  # Автоматически размещаем элементы, чтобы они не налезали друг на друга
+    plt.show()  # Показ графика
+
+def show_department_attack_stats(department_name, attack_type):
+    """
+    Отображает комбинированную столбчатую диаграмму для указанного отдела и типа атаки.
+    """
+    global loaded_departments
+
+    if department_name not in loaded_departments:
+        status_label.config(text=f"Отдел '{department_name}' не найден.")
         return
 
-    status_label.config(text=f"Проведение тренинга '{training_type}'...")
-    root.update()  # Обновляем GUI, чтобы сообщение отобразилось
-    department = perform_department_training(department, training_type, intensity)
-    save_department_data_to_csv(department, f"department_{department_name}.csv")  # Сохраняем данные отдела
+    department = loaded_departments[department_name]
 
-    # Выводим прогресс в консоль (Вариант 1)
-    print("\n=== Прогресс после тренинга ===")
+    employee_names = [employee.name for employee in department.employees]
+    success_counts = []
+    total_attacks = []
+
     for employee in department.employees:
-        print(f"Сотрудник: {employee.name}")
-        for characteristic, value_before in employee_data_before[employee.name].items():
-            value_after = getattr(employee, characteristic)
-            change = value_after - value_before
-            percentage_change = (change / value_before) * 100 if value_before != 0 else 0
-            print(f"  {characteristic}: {value_before:.2f} -> {value_after:.2f} ({percentage_change:.2f}%)")
+        success_counts.append(employee.attack_stats[attack_type]["success_count"])
+        total_attacks.append(employee.attack_stats[attack_type]["total_attacks"])
 
-    show_department_employees(department_name)
-    status_label.config(text="Атаки и тренинг проведены. Прогресс выведен в консоль.")
+    failure_counts = [total - success for total, success in zip(total_attacks, success_counts)]  # Кол-во неуспешных атак
 
-def run_scenario():
-    """Запускает сценарий атак и тренинга для выбранного отдела."""
-    department_name = attack_department_combobox.get()
-    perform_attacks_and_training(department_name)
+    # Создаем график
+    fig, ax = plt.subplots(figsize=(10, 6))
+    width = 0.75  # Ширина столбца
+
+    ax.bar(employee_names, success_counts, width, label='Успешные атаки', color='green')  # Успешные атаки
+    ax.bar(employee_names, failure_counts, width, bottom=success_counts, label='Неуспешные атаки', color='red')  # Неуспешные атаки
+
+    ax.set_xlabel('Сотрудники')  # Надпись для Х
+    ax.set_ylabel('Количество атак')  # Надпись для Y
+    ax.set_title(f'Результаты атак типа "{attack_type}" в отделе "{department_name}"')  # Заголовок
+    ax.legend()  # Легенда
+
+    plt.xticks(rotation=45, ha='right')  # Подписи X
+    plt.tight_layout()  # Автоматическое размещение элементов, чтобы они не налезали друг на друга
+    plt.show()  # Показ графика
+
 
 # --- Создание главного окна ---
 root = tk.Tk()
@@ -331,18 +388,11 @@ create_button.grid(row=0, column=2, padx=5, sticky=tk.W)
 load_button = ttk.Button(controls_frame, text="Загрузить сотрудников из CSV", command=load_employees)
 load_button.grid(row=0, column=3, padx=5, sticky=tk.W)
 
+department_labels = {} #Словарь для хранения labels
 
 # --- Рамка для информации об отделах ---
 departments_frame = ttk.Frame(root, padding=10)
 departments_frame.pack(side=tk.TOP, fill=tk.X)
-save_departments_button = ttk.Button(departments_frame, text="Сохранить данные по отделам", command=lambda: save_all_department_data(loaded_departments)) #Создаем кнопку
-save_departments_button.grid(row=2, column=0, padx=5, sticky=tk.W) #Выделяем место
-# Кнопка загрузки данных отделов
-load_departments_button = ttk.Button(departments_frame, text="Загрузить данные отделов", command=load_departments_data)
-load_departments_button.grid(row=2, column=1, padx=5, sticky=tk.W)
-
-department_labels = {} #Словарь для хранения labels
-
 # Создание меток для каждого отдела, привязка события клика
 i = 0 #Инициализируем счетчик
 for dept_name, department in departments.items():
@@ -354,9 +404,23 @@ for dept_name, department in departments.items():
     # Создаем кнопку "Показать сотрудников" для каждого отдела
     show_employees_button = ttk.Button(departments_frame, text=f"Показать сотрудников {dept_name}", command=lambda name=dept_name: show_department_employees(name)) #Создаем кнопку
     show_employees_button.grid(row=1, column=i, padx=5, sticky=tk.W) #Размещаем кнопку
+
+    # --- Выпадающий список с типами атак ---
+    attack_type_combobox = ttk.Combobox(departments_frame, values=["phishing", "malware", "social_engineering"],
+                                        state="readonly")
+    attack_type_combobox.grid(row=2, column=i, padx=5, sticky=tk.W)
+    attack_type_combobox.set("phishing")  # Значение по умолчанию
+
+    # --- Кнопка "Показать статистику атак" ---
+    show_attack_stats_button = ttk.Button(departments_frame, text=f"Статистика атак {dept_name}", command=lambda name=dept_name, combo=attack_type_combobox: show_department_attack_stats(name, combo.get()))
+    show_attack_stats_button.grid(row=3, column=i, padx=5, sticky=tk.W)
     i += 1 #Увеличиваем счетчик
 
-
+save_departments_button = ttk.Button(departments_frame, text="Сохранить данные по отделам", command=lambda: save_all_department_data(loaded_departments)) #Создаем кнопку
+save_departments_button.grid(row=5, column=0, padx=5, sticky=tk.W) #Выделяем место
+# Кнопка загрузки данных отделов
+load_departments_button = ttk.Button(departments_frame, text="Загрузить данные отделов", command=load_departments_data)
+load_departments_button.grid(row=5, column=1, padx=5, sticky=tk.W)
 
 # --- Тип атаки ---
 ttk.Label(controls_frame, text="Тип атаки:").grid(row=1, column=0, sticky=tk.W)
@@ -400,18 +464,14 @@ intensity_entry.insert(0, "0.5")  # Значение по умолчанию
 train_button = ttk.Button(controls_frame, text="Провести тренинг", command=lambda: perform_training_read())
 train_button.grid(row=7, column=0, padx=5, sticky=tk.W)
 
-# --- Кнопка "Запустить сценарий" ---
-run_scenario_button = ttk.Button(controls_frame, text="Запустить сценарий", command=lambda: run_scenario())
-run_scenario_button.grid(row=8, column=0, padx=5, sticky=tk.W)
-
 # --- Рамка для графика ---
 chart_frame = ttk.Frame(root, padding=10)
 chart_frame.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
 
 
-# --- 9. Метка статуса ---
+# --- Метка статуса ---
 status_label = ttk.Label(root, text="")
 status_label.pack(side=tk.BOTTOM, fill=tk.X, padx=10, pady=5)
 
-# --- 10. Запуск главного цикла ---
+# --- Запуск главного цикла ---
 root.mainloop()
