@@ -15,7 +15,7 @@ def apply_training(employee, training_type, intensity):
     # Вероятность успешного усвоения материала тренинга
     training_success_rate = 0.3  # % Граница неуспеха
 
-    if random.random() > training_success_rate: #Если число больше границы - усвоили тренинг
+    if random.random() > training_success_rate: #Если число больше границы - тренинг успешен
         if training_type == "phishing":
             # Тренинг по осведомленности о фишинге
             employee.attentiveness = min(1.0, employee.attentiveness + 0.2 * intensity * employee.learnability)
@@ -44,13 +44,12 @@ def apply_training(employee, training_type, intensity):
             # Тренинг по защите от социальной инженерии
             employee.social_engineering_awareness = min(1.0, employee.social_engineering_awareness + 0.3 * intensity * employee.learnability)
             employee.attentiveness = min(1.0, employee.attentiveness + 0.15 * intensity * employee.learnability)
-            employee.authority_respect = max(0.0, employee.authority_respect - 0.2 * intensity * employee.learnability) #Уменьшаем уважение к авторитетам, но не меньше 0
-            employee.risk_aversion = min(1.0, employee.risk_aversion + 0.1 * intensity * employee.learnability) #Повышаем осторожность
+            employee.authority_respect = min(1.0, employee.authority_respect + 0.2 * intensity * employee.learnability) #Уменьшаем уважение к авторитетам, но не меньше 0
+            employee.risk_aversion = min(1.0, employee.risk_aversion - 0.1 * intensity * employee.learnability) #Понижаем склонность к риску
         print(f"Тренинг типа '{training_type}' успешно применен к сотруднику {employee.name}")
     else: # Если меньше границы - не усвоили тренинг
         print(f"Тренинг типа '{training_type}' не оказал влияния на сотрудника {employee.name}")
 
-from ProjectFunctions.TrainingSimulation import apply_training #Укажите путь
 
 def perform_department_training(department, training_type, intensity):
     """Применяет тренинг указанного типа ко всем сотрудникам отдела."""

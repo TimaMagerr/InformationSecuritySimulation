@@ -30,7 +30,9 @@ def calculate_attack_success_probability(employee, attack_type, attack_complexit
     # Коэффициенты, определяющие влияние параметров сотрудника и атаки
     b1 = 1.0   # Влияние внимательности (Attentiveness)
     b2 = 0.8   # Влияние технической грамотности (Technical Literacy)
+
     b3 = 1.2   # Влияние сложности атаки (Attack Complexity)
+
     b4 = 0.7   # Влияние осведомленности о социальной инженерии (Social Engineering Awareness)
     b5 = 0.9   # Влияние уважения к авторитетам (Authority Respect)
     b6 = 0.6   # Влияние рабочей нагрузки (Workload)
@@ -47,7 +49,7 @@ def calculate_attack_success_probability(employee, attack_type, attack_complexit
          b7 * employee.stress_resistance - b8 * employee.instruction_following -
          b9 * (1 - employee.learnability)  +  # Обучаемость: чем НИЖЕ, тем выше вероятность успеха
          b10 * (1 - employee.reporting_culture) -  # Reporting Culture: чем НИЖЕ, тем выше вероятность успеха
-         b11 * employee.risk_aversion) # Risk aversion: Чем выше склонность к риску, тем БОЛЬШЕ вероятность успеха
+         b11 * employee.risk_aversion) # Risk aversion: Чем выше склонность к риску
 
     # Применяем логистическую функцию
     probability = logistic_function(z)

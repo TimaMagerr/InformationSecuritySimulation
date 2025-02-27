@@ -73,6 +73,7 @@ def load_departments_data():
 
     update_department_info()  # Обновляем информацию об отделах в GUI
     status_label.config(text="Данные отделов загружены из файлов.")
+    update_chart();
 
 
 def update_department_info():
@@ -254,18 +255,36 @@ def perform_training_and_update(department_name, training_type, intensity):
         return
 
     department = loaded_departments[department_name]
+
+    # Запоминаем характеристики сотрудников ДО тренинга
+    employee_data_before = {}
+    for employee in department.employees:
+        employee_data_before[employee.name] = {
+            "attentiveness": employee.attentiveness,
+            "technical_literacy": employee.technical_literacy,
+            "social_engineering_awareness": employee.social_engineering_awareness,
+            "stress_resistance": employee.stress_resistance,
+            "instruction_following": employee.instruction_following,
+            "learnability": employee.learnability,
+            "reporting_culture": employee.reporting_culture,
+            "authority_respect": employee.authority_respect,
+            "workload": employee.workload,
+            "risk_aversion": employee.risk_aversion
+        }
+
     department = perform_department_training(department, training_type, intensity)
     # Сохраняем данные в CSV файлы
     save_department_data_to_csv(department, f"department_{department_name}.csv")  # Сохраняем данные отдела
     show_department_employees(department_name) #Показываем табличку
 
     status_label.config(text=f"Тренинг '{training_type}' с интенсивностью {intensity:.2f} успешно проведен для отдела '{department_name}'.")
-    show_training_progress(department_name, training_type)
+    # --- Отображаем прогресс после тренинга ---
+    show_training_progress(department_name, training_type, employee_data_before) #Передаем employee_data_before
 
 #Функция для отображения прогресса после тренинга:
-def show_training_progress(department_name, training_type):
+def show_training_progress(department_name, training_type, employee_data_before):
     """
-    Отображает график прогресса сотрудников после тренинга.
+    Отображает графики прогресса сотрудников после тренинга.
     """
     global loaded_departments
 
@@ -280,52 +299,51 @@ def show_training_progress(department_name, training_type):
     final_values = {}
 
     # Получаем начальные и конечные значения характеристик для каждого сотрудника
-    for employee in department.employees:
-        if training_type == "phishing":
-            characteristics = ["attentiveness", "technical_literacy", "social_engineering_awareness"]
-        elif training_type == "password":
-            characteristics = ["instruction_following", "technical_literacy", "risk_aversion"]
-        elif training_type == "data_handling":
-            characteristics = ["instruction_following", "technical_literacy", "attentiveness"]
-        elif training_type == "stress":
-            characteristics = ["stress_resistance", "reporting_culture", "attentiveness"]
-        elif training_type == "social_engineering":
-            characteristics = ["social_engineering_awareness", "attentiveness", "authority_respect", "risk_aversion"]
-        else:
-            status_label.config(text="Неизвестный тип тренинга.")
-            return
+    if training_type == "phishing":
+        characteristics = ["attentiveness", "technical_literacy", "social_engineering_awareness"]
+    elif training_type == "password":
+        characteristics = ["instruction_following", "technical_literacy", "risk_aversion"]
+    elif training_type == "data_handling":
+        characteristics = ["instruction_following", "technical_literacy", "attentiveness"]
+    elif training_type == "stress":
+        characteristics = ["stress_resistance", "reporting_culture", "attentiveness"]
+    elif training_type == "social_engineering":
+        characteristics = ["social_engineering_awareness", "attentiveness", "authority_respect", "risk_aversion"]
+    else:
+        status_label.config(text="Неизвестный тип тренинга.")
+        return
 
-        initial_values[employee.name] = {char: getattr(employee, char) for char in characteristics}
-        final_values[employee.name] = {}
-        for char in characteristics:
+    for employee in department.employees:
+         if employee.name in employee_data_before:
+            for char in characteristics:
+                initial_values[employee.name] = employee_data_before[employee.name]
+         else:
+             initial_values[employee.name] = {char: getattr(employee, char) for char in characteristics}
+         final_values[employee.name] = {}
+         for char in characteristics:
             final_values[employee.name][char] = getattr(employee, char)
 
-    # --- Создаем график ---
-    fig, ax = plt.subplots(figsize=(12, 8))  # Увеличиваем размер графика для лучшей читаемости
-    width = 0.35  # Ширина столбцов
+    # --- Создаем графики для каждой характеристики ---
+    for char in characteristics:
+        fig, ax = plt.subplots(figsize=(8, 6))  # Создаем отдельный график для каждой характеристики
+        width = 0.35  # Ширина столбцов
+        x = np.arange(len(employee_names))  # Позиция для столбцов
 
-    x = np.arange(len(employee_names))  # Позиции для столбцов
-
-    # Создаем столбцы для начальных и конечных значений
-    for i, char in enumerate(characteristics):
         initial = [initial_values[name][char] for name in employee_names]
         final = [final_values[name][char] for name in employee_names]
 
-        x_pos = x + i * width  # Смещаем столбцы для каждой характеристики
-        ax.bar(x_pos, initial, width, label=f"{char} (Начальное)", color=f'C{i}', alpha=0.5)
-        ax.bar(x_pos, final, width, label=f"{char} (Конечное)", color=f'C{i}')
+        # Создаем графики
+        ax.bar(x - width/2, initial, width, label="Начальное", color='blue', alpha=0.5)
+        ax.bar(x + width/2, final, width, label="Конечное", color='green')
 
-    # Настраиваем график
-    ax.set_xlabel('Сотрудники')
-    ax.set_ylabel('Значение характеристики')
-    ax.set_title(f'Прогресс после тренинга "{training_type}" в отделе "{department_name}"')
-    ax.set_xticks(x + width * (len(characteristics) - 1) / 2)  # Выравниваем метки оси X
-    ax.set_xticklabels(employee_names, rotation=45, ha='right')  # Наклоняем подписи оси X для читаемости
-
-    ax.legend()  # Добавляем легенду
-
-    plt.tight_layout()  # Автоматически размещаем элементы, чтобы они не налезали друг на друга
-    plt.show()  # Показ графика
+        ax.set_xlabel('Сотрудники')  # Надпись для Х
+        ax.set_ylabel('Значение')  # Надпись для Y
+        ax.set_title(f'Прогресс тренинга "{training_type}" в отделе "{department_name}"\n"{char}"')  # Заголовок графика
+        ax.set_xticks(x)
+        ax.set_xticklabels(employee_names, rotation=45, ha='right')  # Подписи Х
+        ax.legend()  # Добавляем легенду
+        plt.tight_layout()  # Автоматическое размещение элементов, чтобы они не налезали друг на друга
+        plt.show()  # Вывод графика
 
 def show_department_attack_stats(department_name, attack_type):
     """
