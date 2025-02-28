@@ -11,12 +11,12 @@ def save_employees_to_csv(departments, filename="employees.csv"):
         with open(filename, 'w', newline='', encoding='utf-8') as csvfile:
             writer = csv.writer(csvfile, delimiter=';')
 
-            # Заголовки столбцов
+            # Заголовки
             headers = ["Name", "Department", "Age", "Experience", "Attentiveness",
                        "Technical Literacy", "Stress Resistance", "Instruction Following",
                        "Learnability", "Social Engineering Awareness", "Reporting Culture",
                        "Authority Respect", "Workload", "Risk Aversion"]
-            writer.writerow(headers)  # Записываем заголовки
+            writer.writerow(headers)
 
             for department in departments.values():
                 for employee in department.employees:
@@ -25,7 +25,7 @@ def save_employees_to_csv(departments, filename="employees.csv"):
                            employee.instruction_following, employee.learnability, employee.social_engineering_awareness,
                            employee.reporting_culture, employee.authority_respect, employee.workload,
                            employee.risk_aversion]
-                    writer.writerow(row)  # Записываем данные сотрудника
+                    writer.writerow(row)
 
         print(f"Сотрудники сохранены в файл {filename}")
 
@@ -77,7 +77,7 @@ def load_employees_from_csv(departments):
                 try:
                     name, department_name, age, experience, attentiveness, technical_literacy, stress_resistance, instruction_following, learnability, social_engineering_awareness, reporting_culture, authority_respect, workload, risk_aversion = row
 
-                    # Преобразуем типы данных, если это необходимо.
+                    # Преобразуем типы данных
                     age = int(age)
                     experience = int(experience)
                     attentiveness = float(attentiveness)
@@ -115,7 +115,6 @@ def load_employees_from_csv(departments):
 
                 except Exception as e:
                     print(f"Ошибка при обработке строки: {row}. Ошибка: {e}")
-
     except FileNotFoundError:
         print(f"Файл {filename} не найден!")
         return {}
@@ -176,7 +175,7 @@ def save_department_data_to_csv(department, filename=None):
             writer.writerow(["Department:", department.name])  # Записываем название отдела в первой строке
             writer.writerow(employee_headers + attack_headers)  # Записываем заголовки во второй строке
 
-            # Записываем информацию о сотрудниках и статистику для *каждого* сотрудника
+            # Записываем информацию о сотрудниках и статистику
             for employee in department.employees:
                 # Данные сотрудника
                 row = [employee.name, employee.age, employee.experience,
@@ -185,7 +184,6 @@ def save_department_data_to_csv(department, filename=None):
                        employee.reporting_culture, employee.authority_respect, employee.workload,
                        employee.risk_aversion]
 
-                # Статистика об атаках берется *из отдела*, а не из сотрудника (у сотрудника нет своей статистики)
                 attack_stats = [employee.attack_stats["phishing"]["success_count"],
                                 employee.attack_stats["phishing"]["total_attacks"],
                                 employee.attack_stats["malware"]["success_count"],
@@ -202,20 +200,16 @@ def save_department_data_to_csv(department, filename=None):
 
 
 def save_all_department_data(departments):
-    """
-    Сохраняет данные каждого отдела в отдельный CSV файл.
-    """
+    """Сохраняет данные каждого отдела в отдельный CSV файл."""
     for department_name, department in departments.items():
-        # Create a filename based on the department name (you can add a prefix or suffix)
         # Создаем имя файла на основе имени отдела (можно добавить префикс или суффикс)
         filename = f"department_{department_name}.csv"
-        # Call the save function for each department
-        # Вызываем функцию сохранения для каждого отдела
+        # и сохраняем данные
         save_department_data_to_csv(department, filename)
 
 def load_department_data_from_csv(filename):
     """Загружает информацию об отделе (сотрудники и статистика) из CSV файла."""
-    departments = {}  # Временный словарь для хранения данных
+    departments = {}  # словарь для хранения данных (отделов)
     try:
         with open(filename, 'r', newline='', encoding='utf-8') as csvfile:
             reader = csv.reader(csvfile, delimiter=';')
@@ -223,7 +217,7 @@ def load_department_data_from_csv(filename):
             # Читаем название отдела
             first_row = next(reader, None)
             if first_row is None or len(first_row) < 2 or first_row[0] != "Department:":
-                print(f"Файл {filename} имеет некорректный формат (отсутствует название отдела).") #Сообщение на русском
+                print(f"Файл {filename} имеет некорректный формат (отсутствует название отдела).")
                 return None
 
             department_name = first_row[1]
@@ -231,7 +225,7 @@ def load_department_data_from_csv(filename):
             # Читаем заголовки
             headers = next(reader, None)
             if headers is None:
-                print(f"Файл {filename} пуст или не содержит заголовков.") #Сообщение на русском
+                print(f"Файл {filename} пуст или не содержит заголовков.")
                 return None
 
             # Разделяем заголовки на заголовки сотрудников и статистики
@@ -247,7 +241,7 @@ def load_department_data_from_csv(filename):
             # Проверяем, что заголовки соответствуют ожидаемым
             expected_headers = employee_headers + attack_headers
             if headers != expected_headers:
-                print("Структура CSV файла некорректна!") #Сообщение на русском
+                print("Структура CSV файла некорректна!")
                 return None
 
             # Создаем отдел
@@ -310,10 +304,10 @@ def load_department_data_from_csv(filename):
                     department.add_employee(employee)  # Добавляем сотрудника
 
                 except Exception as e:
-                    print(f"Ошибка при обработке строки: {row}. Ошибка: {e}") #Сообщение на русском
+                    print(f"Ошибка при обработке строки: {row}. Ошибка: {e}")
                     return None
 
-            print(f"Данные отдела '{department_name}' загружены из файла {filename}") #Сообщение на русском
+            print(f"Данные отдела '{department_name}' загружены из файла {filename}")
             departments[department_name] = department
             return departments
 
@@ -321,5 +315,5 @@ def load_department_data_from_csv(filename):
         print(f"Файл {filename} не найден!") #Сообщение на русском
         return None
     except Exception as e:
-        print(f"Произошла ошибка при загрузке данных из файла {filename}: {e}") #Сообщение на русском
+        print(f"Произошла ошибка при загрузке данных из файла {filename}: {e}")
         return None

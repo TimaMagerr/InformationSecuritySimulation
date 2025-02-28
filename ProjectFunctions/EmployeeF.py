@@ -6,7 +6,7 @@ import random
 # Генерация случайных сотрудников
 def generate_employees(departments, num_employees):
     """Генерирует случайных сотрудников и распределяет их по существующим отделам."""
-    names = ["Alice", "Bob", "Charlie", "David", "Eve", "Mallory", "Trent", "Carol", "Mary", "Piter", "Vladi", "Alex"]  # Пример списка имен
+    names = ["Alexey", "Victor", "Mariya", "David", "Eva", "Alexander", "Timur", "Slava", "Victoriya", "Vladimir", "Vladislav", "Georgiy"]  # Пример списка имен
     department_names = list(departments.keys())  # Получаем список названий отделов
 
     for i in range(num_employees):

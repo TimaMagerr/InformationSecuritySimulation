@@ -1,3 +1,4 @@
+import csv
 import random
 import tkinter as tk
 from tkinter import ttk, Toplevel, Text, Scrollbar, filedialog  # Добавлены Toplevel, Text, Scrollbar
@@ -383,6 +384,81 @@ def show_department_attack_stats(department_name, attack_type):
     plt.tight_layout()  # Автоматическое размещение элементов, чтобы они не налезали друг на друга
     plt.show()  # Показ графика
 
+def show_average_attack_stats_with_numbers():
+    """
+    Выводит среднюю статистику по атакам для каждого отдела в виде столбчатой диаграммы с цифрами.
+    """
+    global loaded_departments
+
+    if not loaded_departments:
+        status_label.config(text="Нет загруженных отделов.")
+        return
+
+    department_names = list(loaded_departments.keys())
+    attack_types = ["phishing", "malware", "social_engineering"]
+    average_success_rates = {}
+
+    for department_name, department in loaded_departments.items():
+        total_employees = len(department.employees)
+        if total_employees == 0:
+            average_success_rates[department_name] = {attack_type: 0 for attack_type in attack_types}
+            continue
+
+        success_rates = {attack_type: 0 for attack_type in attack_types}
+        for employee in department.employees:
+            for attack_type in attack_types:
+                total_attacks = employee.attack_stats[attack_type]["total_attacks"]
+                success_count = employee.attack_stats[attack_type]["success_count"]
+                if total_attacks > 0:
+                    success_rates[attack_type] += (success_count / total_attacks)
+        average_success_rates[department_name] = {attack_type: (success_rates[attack_type] / total_employees) if total_employees > 0 else 0 for attack_type in attack_types}
+
+    # Создаем график
+    fig, ax = plt.subplots(figsize=(12, 8))
+    width = 0.2  # Ширина столбца
+
+    x = np.arange(len(department_names))
+
+    # Создаем столбцы для каждого типа атаки
+    for i, attack_type in enumerate(attack_types):
+        success_rates = [average_success_rates[department_name][attack_type] for department_name in department_names]
+        bars = ax.bar(x + (i - 1) * width, success_rates, width, label=attack_type)
+
+        # Добавляем цифры на столбцы
+        for bar in bars:
+            yval = bar.get_height()
+            ax.text(bar.get_x() + bar.get_width()/2, yval, round(yval, 2), ha='center', va='bottom')
+
+    # Настраиваем график
+    ax.set_xlabel('Отделы')
+    ax.set_ylabel('Средняя доля успешных атак')
+    ax.set_title('Средняя статистика по атакам для каждого отдела')
+    ax.set_xticks(x)
+    ax.set_xticklabels(department_names, rotation=45, ha='right')
+    ax.legend()
+
+    plt.tight_layout()
+    plt.show()
+
+def clear_attack_statistics():
+    """
+    Очищает статистику атак для всех сотрудников во всех отделах и перезаписывает CSV-файлы.
+    """
+    global loaded_departments
+
+    for department_name, department in loaded_departments.items():
+        for employee in department.employees:
+            employee.attack_stats = {
+                "phishing": {"total_attacks": 0, "success_count": 0},
+                "malware": {"total_attacks": 0, "success_count": 0},
+                "social_engineering": {"total_attacks": 0, "success_count": 0}
+            }
+        save_department_data_to_csv(department, f"department_{department_name}.csv")  # Перезаписываем CSV
+    status_label.config(text="Статистика атак успешно очищена и сохранена.")
+
+    show_department_employees(department_name)  # Показываем табличку
+    status_label.config(text="Статистика атак успешно очищена и сохранена.")
+
 
 # --- Создание главного окна ---
 root = tk.Tk()
@@ -434,16 +510,102 @@ for dept_name, department in departments.items():
     show_attack_stats_button.grid(row=3, column=i, padx=5, sticky=tk.W)
     i += 1 #Увеличиваем счетчик
 
-save_departments_button = ttk.Button(departments_frame, text="Сохранить данные по отделам", command=lambda: save_all_department_data(loaded_departments)) #Создаем кнопку
-save_departments_button.grid(row=5, column=0, padx=5, sticky=tk.W) #Выделяем место
+def show_average_attack_stats_table():
+    """
+    Выводит среднюю статистику по атакам для каждого отдела в виде таблицы
+    и предоставляет возможность сохранить таблицу в CSV-файл.
+    """
+    global loaded_departments
+
+    if not loaded_departments:
+        status_label.config(text="Нет загруженных отделов.")
+        return
+
+    department_names = list(loaded_departments.keys())
+    attack_types = ["phishing", "malware", "social_engineering"]
+    average_success_rates = {}
+
+    for department_name, department in loaded_departments.items():
+        total_employees = len(department.employees)
+        if total_employees == 0:
+            average_success_rates[department_name] = {attack_type: 0 for attack_type in attack_types}
+            continue
+
+        success_rates = {attack_type: 0 for attack_type in attack_types}
+        for employee in department.employees:
+            for attack_type in attack_types:
+                total_attacks = employee.attack_stats[attack_type]["total_attacks"]
+                success_count = employee.attack_stats[attack_type]["success_count"]
+                if total_attacks > 0:
+                    success_rates[attack_type] += (success_count / total_attacks)
+        average_success_rates[department_name] = {attack_type: (success_rates[attack_type] / total_employees) if total_employees > 0 else 0 for attack_type in attack_types}
+
+    # Функция для сохранения таблицы в CSV-файл
+    def save_table_to_csv():
+        filename = tk.filedialog.asksaveasfilename(defaultextension=".csv",
+                                                   filetypes=[("CSV files", "*.csv"), ("All files", "*.*")])
+        if filename:
+            with open(filename, 'w', newline='') as csvfile:
+                csvwriter = csv.writer(csvfile)
+                # Записываем заголовки
+                csvwriter.writerow(["Отдел"] + attack_types)
+                # Записываем данные
+                for department_name in department_names:
+                    row_data = [department_name] + [f"{average_success_rates[department_name][attack_type]:.2f}" for attack_type in attack_types]
+                    csvwriter.writerow(row_data)
+            status_label.config(text=f"Таблица сохранена в файл: {filename}")
+
+    # Создаем окно для таблицы
+    table_window = tk.Toplevel(root)
+    table_window.title("Средняя статистика по атакам")
+
+    # Создаем заголовки таблицы
+    header_labels = ["Отдел"] + attack_types
+    for col, header in enumerate(header_labels):
+        label = ttk.Label(table_window, text=header, padding=5, font=('Arial', 10, 'bold'))
+        label.grid(row=0, column=col, sticky="nsew")
+
+    # Заполняем таблицу данными
+    for row, department_name in enumerate(department_names):
+        # Метка для названия отдела
+        dept_label = ttk.Label(table_window, text=department_name, padding=5)
+        dept_label.grid(row=row + 1, column=0, sticky="nsew")
+
+        # Статистика по атакам для текущего отдела
+        for col, attack_type in enumerate(attack_types):
+            success_rate = average_success_rates[department_name][attack_type]
+            rate_label = ttk.Label(table_window, text=f"{success_rate:.2f}", padding=5)
+            rate_label.grid(row=row + 1, column=col + 1, sticky="nsew")
+
+    # Настраиваем отображение таблицы
+    for row in range(len(department_names) + 1):
+        for col in range(len(attack_types) + 1):
+            table_window.grid_columnconfigure(col, weight=1)
+            table_window.grid_rowconfigure(row, weight=1)
+
+    # Добавляем кнопку "Сохранить в CSV"
+    save_button = ttk.Button(table_window, text="Сохранить в CSV", command=save_table_to_csv)
+    save_button.grid(row=len(department_names) + 1, column=0, columnspan=len(attack_types) + 1, pady=10)
+
+
+# --- Рамка для кнопок загрузки и сохранения ---
+saveLoad_frame = ttk.Frame(root, padding=10)
+saveLoad_frame.pack(side=tk.TOP, fill=tk.X)
+
+# Кнопка сохранения данных отделов
+save_departments_button = ttk.Button(saveLoad_frame, text="Сохранить данные по отделам", command=lambda: save_all_department_data(loaded_departments)) #Создаем кнопку
+save_departments_button.grid(row=4, column=0, padx=5, sticky=tk.W)
 # Кнопка загрузки данных отделов
-load_departments_button = ttk.Button(departments_frame, text="Загрузить данные отделов", command=load_departments_data)
-load_departments_button.grid(row=5, column=1, padx=5, sticky=tk.W)
+load_departments_button = ttk.Button(saveLoad_frame, text="Загрузить данные отделов", command=load_departments_data)
+load_departments_button.grid(row=4, column=1, padx=5, sticky=tk.W)
+# Кнопка очистки статистики
+clear_stats_button = ttk.Button(saveLoad_frame, text="Очистить статистику атак", command=clear_attack_statistics)
+clear_stats_button.grid(row=4, column=3, padx=5, sticky=tk.W)
+
 
 # --- Тип атаки ---
 ttk.Label(controls_frame, text="Тип атаки:").grid(row=1, column=0, sticky=tk.W)
-attack_type_combobox = ttk.Combobox(controls_frame, values=["phishing", "malware", "social_engineering"],
-                                    state="readonly")
+attack_type_combobox = ttk.Combobox(controls_frame, values=["phishing", "malware", "social_engineering"], state="readonly")
 attack_type_combobox.grid(row=1, column=1, sticky=tk.W)
 attack_type_combobox.set("phishing")  # Значение по умолчанию
 
@@ -455,8 +617,7 @@ count_attacks_entry.insert(0, "1")  # Значение по умолчанию
 
 # --- Отдел для атаки ---
 ttk.Label(controls_frame, text="Отдел для атаки/тренинга:").grid(row=3, column=0, sticky=tk.W)
-attack_department_combobox = ttk.Combobox(controls_frame, values=list(departments.keys()),
-                                          state="readonly")
+attack_department_combobox = ttk.Combobox(controls_frame, values=list(departments.keys()), state="readonly")
 attack_department_combobox.grid(row=3, column=1, sticky=tk.W)
 attack_department_combobox.set(list(departments.keys())[0])  # Первый отдел по умолчанию
 
@@ -482,14 +643,26 @@ intensity_entry.insert(0, "0.5")  # Значение по умолчанию
 train_button = ttk.Button(controls_frame, text="Провести тренинг", command=lambda: perform_training_read())
 train_button.grid(row=7, column=0, padx=5, sticky=tk.W)
 
+
 # --- Рамка для графика ---
 chart_frame = ttk.Frame(root, padding=10)
 chart_frame.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
 
-
 # --- Метка статуса ---
 status_label = ttk.Label(root, text="")
 status_label.pack(side=tk.BOTTOM, fill=tk.X, padx=10, pady=5)
+
+
+# --- Рамка для кнопок средней статистики ---
+avgData_frame = ttk.Frame(root, padding=10)
+avgData_frame.pack(side=tk.TOP, fill=tk.X)
+
+# Кнопка для отображения средней статистики в виде таблицы ---
+show_average_table_button = ttk.Button(avgData_frame, text="Показать среднюю статистику атак (таблица)", command=show_average_attack_stats_table)
+show_average_table_button.grid(row=0, column=0, padx=5, sticky=tk.W)
+# Кнопка для отображения средней статистики в виде столбчатой диаграммы с цифрами ---
+show_average_numbers_button = ttk.Button(avgData_frame, text="Показать среднюю статистику атак (столбчатая диаграмма)", command=show_average_attack_stats_with_numbers)
+show_average_numbers_button.grid(row=1, column=0, padx=5, sticky=tk.W)
 
 # --- Запуск главного цикла ---
 root.mainloop()

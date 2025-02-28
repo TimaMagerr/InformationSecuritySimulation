@@ -7,6 +7,7 @@ from ProjectFunctions.LogisticFunc import calculate_attack_success_probability
 def simulate_attack(employee, attack_type, attack_complexity):
     """Симулирует атаку на сотрудника и возвращает результат (успех/неудача)."""
     probability = calculate_attack_success_probability(employee, attack_type, attack_complexity) # Рассчитываем вероятность успеха атаки
+    # Добавляем случайность в процесс успешности (опционально)
     success = random.random() < probability
     return success, probability
 
@@ -15,10 +16,10 @@ def perform_department_attack_simulation(department, attack_type, num_attacks):
     for employee in department.employees:
         success_count = 0
 
-        for _ in range(num_attacks):
+        for i in range(num_attacks):
             # Повыбирать различную сложность атаки
             attack_complexity = random.random()
-            success, _ = simulate_attack(employee, attack_type, attack_complexity)
+            success, i = simulate_attack(employee, attack_type, attack_complexity)
 
             if success:
                 success_count += 1
